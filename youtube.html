@@ -58,8 +58,8 @@
             <h2 data-aos="fade-up">Baixar Video do Youtube</h2>
             <p data-aos="fade-up" data-aos-delay="100">Com o iSalvei você pode baixar vídeos gratuitamente em alta qualidade. Nosso downloader pode ser usado tanto no PC quanto no celular, permitindo que você use em qualquer lugar</p>
             <form action="#" class="form-search d-flex align-items-stretch mb-3" data-aos="fade-up" data-aos-delay="200">
-              <input type="text" class="form-control" placeholder="insira o link Youtube">
-              <button type="submit" class="btn btn-primary">Salvar</button>
+              <input type="text" class="form-control" placeholder="insira o link Youtube" id="youtubeLink">
+              <button type="submit" class="btn btn-primary" onclick="abrirLink()" >Salvar</button>
             </form>
           </div>
           <div class="col-lg-5 order-1 order-lg-2 hero-img" data-aos="zoom-out">
@@ -70,6 +70,23 @@
     </section>
   <a href="#" id="scroll-top" class="scroll-top d-flex align-items-center justify-content-center"><i class="bi bi-arrow-up-short"></i></a>
   <div id="preloader"></div>
+  <script>
+    function abrirLink() {
+        var link = document.getElementById('youtubeLink').value;
+        
+        if (link) {
+          if (link.includes("youtube.com")) {
+              var encodedLink = encodeURIComponent(link);
+              window.open('http://127.0.0.1:8000/download/'+ encodedLink, '_blank');
+          } else {
+              alert("Por favor, insira um link válido do YouTube.");
+          }
+            
+        } else {
+            alert("O campo de link está vazio.");
+        }
+    }
+  </script>
   <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="assets/vendor/php-email-form/validate.js"></script>
   <script src="assets/vendor/aos/aos.js"></script>
