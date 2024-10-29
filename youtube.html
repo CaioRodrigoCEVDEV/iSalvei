@@ -58,7 +58,7 @@
             <h2 data-aos="fade-up">Baixar Video do Youtube</h2>
             <p data-aos="fade-up" data-aos-delay="100">Com o iSalvei você pode baixar vídeos gratuitamente em alta qualidade. Nosso downloader pode ser usado tanto no PC quanto no celular, permitindo que você use em qualquer lugar</p>
             <form action="#" class="form-search d-flex align-items-stretch mb-3" data-aos="fade-up" data-aos-delay="200">
-              <input type="text" class="form-control" placeholder="insira o link Youtube" id="youtubeLink">
+              <input type="text" class="form-control" placeholder="insira o link Youtube" id="yt_dlp">
               <button type="submit" class="btn btn-primary" onclick="abrirLink()" >Salvar</button>
             </form>
           </div>
@@ -72,12 +72,12 @@
   <div id="preloader"></div>
   <script>
     function abrirLink() {
-        var link = document.getElementById('youtubeLink').value;
+        var link = document.getElementById('yt_dlp').value;
         
         if (link) {
-          if (link.includes("youtube.com")) {
+          if (link.includes("youtube.com"),("youtu.be"),("instagram.com")) {
               var encodedLink = encodeURIComponent(link);
-              window.open('http://127.0.0.1:8000/download/'+ encodedLink, '_blank');
+              window.open('http://89.117.33.245:8000/download/'+ encodedLink, '_blank');
           } else {
               alert("Por favor, insira um link válido do YouTube.");
           }
