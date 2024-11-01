@@ -24,7 +24,8 @@ HTML_FORM = '''
 </body>
 </html>
 '''
-API_KEY = 'AIzaSyCRsGFR5tM0FbBHlDWe4lQjn2udsMt1yj4'
+with open('/etc/api_key.txt', 'r') as f:
+    API_KEY = f.read().strip()
 class RequestHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith('/download/'):
