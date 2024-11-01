@@ -39,8 +39,8 @@
         <ul>
           <li><a href="index.html">Início<br></a></li>
           <li><a href="youtube.html" class="active">Youtube</a></li>
-          <li><a href="instagram.html">Instagram</a></li>
-          <li><a href="facebook.html">Facebook</a></li>
+         <!-- <li><a href="instagram.html">Instagram</a></li>
+          <li><a href="facebook.html">Facebook</a></li> -->
         <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
       </nav>
 
@@ -73,7 +73,7 @@
         if (link) {
           if (link.includes("youtube.com")||link.includes(("youtu.be"))) {
               var encodedLink = encodeURIComponent(link);
-               window.open('http://X:8000/download/'+ encodedLink, '_blank');
+               window.open('http://x:8000/download/'+ encodedLink, '_blank');
                //window.open('http://127.0.0.1:80/download/'+ encodedLink, '_blank');
           } else {
               alert("Por favor, insira um link válido do YouTube.");
