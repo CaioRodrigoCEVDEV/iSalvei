@@ -1,4 +1,5 @@
-Ajustar Nome do video para alterar # por %
+A fazer:
+    Adicionar passo a passo no youtube.html
 
 
 Como baixar do Youtube?
@@ -10,3 +11,7 @@ Volte para o site iSalvei.com.br, cole o link no campo de entrada na parte super
 
 3. Baixe
 O Video aparecera em uma nova aba, no Player clique nos 3 pontinhos no canto inferior direito e clique em "Baixar". Pronto! O arquivo foi salvo no seu dispositivo.
+
+
+-------------------------------------------------------------------------------------------
+
