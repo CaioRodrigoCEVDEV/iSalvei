@@ -53,19 +53,19 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 file_url = os.path.abspath(file_path)
                 base_url = 'http://89.117.33.245'
                 file_url.replace('/var/www/html', base_url).replace(':8000', '')
-                file_url = file_url.replace('/var/www/html', base_url).replace(':8000', '')
+                file_url = file_url.replace('/var/www/html', base_url).replace(':8000', '').replace('#', '%')
 
                 response_html = f'''<script>window.location.href = '{file_url}';</script>
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Download concluído</title>
-</head>
-<body>
-</body>
-</html>
+                <!DOCTYPE html>
+                <html lang="pt-BR">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Download concluído</title>
+                </head>
+                <body>
+                </body>
+                </html>
                 '''
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
