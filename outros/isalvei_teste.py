@@ -33,13 +33,13 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
             ydl_opts = {
                 'format': 'bestvideo[ext=mp4]',
-                'outtmpl': '%(title).10s.%(ext)s',
+                'outtmpl': '/var/www/html/download/%(title).10s.%(ext)s',
                 'format': 'best',
                 'quiet': True,
                 'noplaylist': True,
                 'username': 'oauth',
                 'password': '',
-                'cookiefile': '/var/www/html/isalvei/ytt_cookies.txt',
+                'cookiefile': '/var/www/isalvei/ytt_cookies.txt',
                 #'max_duration': '60m',
                 #'cookiesfrombrowser': ('chrome',),
                 'api_key': API_KEY
