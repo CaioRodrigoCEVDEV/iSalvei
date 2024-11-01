@@ -1,0 +1,13 @@
+----   Serviço 
+vim /etc/systemd/system/isalvei.service
+
+----ativar o servico
+sudo systemctl enable isalvei.service
+
+---- VERIFICAR STATUS
+sudo systemctl status isalvei.service
+	       stop
+	       start
+	       
+	       
+
