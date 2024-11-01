@@ -1,5 +1,7 @@
 A fazer:
-    Adicionar passo a passo no youtube.html
+   
+   
+   1-  Adicionar passo a passo no youtube.html
 
 
 Como baixar do Youtube?
@@ -15,3 +17,4 @@ O Video aparecera em uma nova aba, no Player clique nos 3 pontinhos no canto inf
 
 -------------------------------------------------------------------------------------------
 
+    2 - Adicionar anuncios google, e publicar no dominio proprio 
