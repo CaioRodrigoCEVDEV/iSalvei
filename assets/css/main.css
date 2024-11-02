@@ -25,7 +25,7 @@
   --accent-color: #0d42ff; /* Accent color that represents your brand on the website. It's used for buttons, links, and other elements that need to stand out */
   --surface-color: #ffffff; /* The surface color is used as a background of boxed elements within sections, such as cards, icon boxes, or other elements that require a visual separation from the global background. */
   --contrast-color: #ffffff; /* Contrast color for text, ensuring readability against backgrounds of accent, heading, or default colors. */
-  --separator-color: #1e2646;
+  --separator-color: #3b4569;
 }
 
 /* Nav Menu Colors - The following color variables are used specifically for the navigation menu. They are separate from the global colors to allow for more customization options */
@@ -97,7 +97,7 @@ h6 {
   --heading-color: #ffffff;
   color: var(--default-color);
   background-color: var(--background-color);
-  padding: 20px 0;
+  padding: 5% 0;
   transition: all 0.5s;
   z-index: 997;
 }
@@ -108,11 +108,11 @@ h6 {
 
 .header .logo img {
   max-height: 36px;
-  margin-right: 8px;
+  margin-right: 20px;
 }
 
 .header .logo h1 {
-  font-size: 30px;
+  font-size: 20px;
   margin: 0;
   font-weight: 700;
   color: var(--heading-color);
@@ -431,7 +431,7 @@ section,
 .hero2 {
   width: 100%;
   min-height: 100vh;
-  padding: 80px 0 80px 0;
+  padding: 140px 0 140px 0;
 }
 
 .hero .hero-bg {
@@ -451,7 +451,7 @@ section,
 
 .hero h2 {
   text-align: justify;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   padding: 0;
   font-size: 40px;
   font-weight: 700;
