@@ -52,7 +52,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     file_path = ydl.prepare_filename(info)
 
                 file_url = os.path.abspath(file_path)
-                base_url = 'http://127.0.0.1'
+                base_url = 'http://89.117.33.245'
                 file_url.replace('/var/www/html', base_url).replace(':8000', '')
                 file_url = file_url.replace('/var/www/html', base_url).replace(':8000', '').replace('#', '%23').replace(' ','%20')
 
@@ -68,6 +68,11 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 </body>
                 </html>
                 '''
+                #file_name = os.path.abspath(file_path)
+                #self.send_response(200)
+                #self.send_header('Content-Type', 'application/octet-stream')
+                #self.send_header('Content-Disposition', 'attachment; filename="{file_name}"')
+                #self.end_headers()
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
@@ -80,10 +85,16 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 self.wfile.write(f'<h1>Erro ao baixar o vídeo: {str(e)}</h1>'.encode('utf-8'))
 
         elif self.path == '/':
-            self.send_response(200)
-            self.send_header('Content-type', 'text/html')
-            self.end_headers()
-            self.wfile.write(HTML_FORM.encode('utf-8'))
+             self.send_response(200)
+             self.send_header('Content-type', 'text/html')
+             self.end_headers()
+             self.wfile.write(HTML_FORM.encode('utf-8'))
+               #file_name = os.path.abspath(file_path)
+               #self.send_response(200)
+               #self.send_header('Content-Type', 'application/octet-stream')
+               #self.send_header('Content-Disposition', 'attachment; filename="{file_name}"')
+               #self.end_headers()
+
         else:
             self.send_error(404, "File not found")
 
@@ -95,3 +106,4 @@ def run(server_class=HTTPServer, handler_class=RequestHandler, port=8000):
 
 if __name__ == "__main__":
     run()
+
