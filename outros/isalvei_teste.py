@@ -34,7 +34,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
             ydl_opts = {
                 'format': 'bestvideo[ext=mp4]',
-                'outtmpl': '/var/www/html/download/%(title).10s.%(ext)s',
+                'outtmpl': '/var/www/html/download/%(id)s.%(ext)s',
                 'format': 'best',
                 'quiet': True,
                 'noplaylist': True,
