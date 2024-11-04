@@ -52,7 +52,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     file_path = ydl.prepare_filename(info)
 
                 file_url = os.path.abspath(file_path)
-                base_url = 'http://89.117.33.245'
+                base_url = 'http://192.168.2.110'
                 file_url.replace('/var/www/html', base_url).replace(':8000', '')
                 file_url = file_url.replace('/var/www/html', base_url).replace(':8000', '').replace('#', '%23').replace(' ','%20')
 
