@@ -20,6 +20,7 @@
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2830123708729244"
      crossorigin="anonymous"></script>
   <link href="assets/css/main.css" rel="stylesheet">
+  <script src="assets/js/abrirLink.js" ></script>
 </head>
 <body class="index-page">
   <header id="header" class="header d-flex align-items-center fixed-top">
@@ -55,6 +56,7 @@
          </div> 
       </div>
           <section class="tutorial">
+            <iframe id="downloadFrame" width="300" height="600" title="teste" style="display: none;" ></iframe>
             <div class="container">
               <div class="separator" data-aos="fade-up" ></div>
             </div>   
@@ -69,21 +71,6 @@
   </main>
      <a href="#" id="scroll-top" class="scroll-top" a>
   <div id="preloader"></div>
-  <script>
-    function abrirLink() {
-        var link = document.getElementById('yt_dlp').value;        
-        if (link) {
-          if (link.includes("youtube.com")||link.includes(("youtu.be"))) {
-              var encodedLink = encodeURIComponent(link);
-               window.open('http://192.168.2.110:8000/download/'+ encodedLink, '_blank');
-          } else {
-              alert("Por favor, insira um link válido do YouTube.");
-          }             
-        } else {
-            alert("O campo de link está vazio.");
-        }
-    }
-  </script>
   <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="assets/vendor/php-email-form/validate.js"></script>
   <script src="assets/vendor/aos/aos.js"></script>
