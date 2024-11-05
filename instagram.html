@@ -35,7 +35,7 @@
           <li><a href="index.html">Início<br></a></li>
           <li><a href="youtube.html">Youtube</a></li>
           <li><a href="instagram.html" class="active">Instagram</a></li>
-          <li><a href="facebook.html">Facebook</a></li>
+          <!--<li><a href="facebook.html">Facebook</a></li>-->
         <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
       </nav>
       <!--<a class="btn-getstarted" href="get-a-quote.html">Get a Quote</a>-->
@@ -50,7 +50,7 @@
             <p data-aos="fade-up" data-aos-delay="100">O iSalvei foi criado para permitir que você baixe vídeos IG para qualquer finalidade que desejar.</p>
             <form action="#" class="form-search d-flex align-items-stretch mb-3" data-aos="fade-up" data-aos-delay="200">
               <input type="text" class="form-control" placeholder="insira o link Instagram" id="yt_dlp">
-              <button type="submit" class="btn btn-primary" onclick="abrirLink()">Salvar</button>
+              <button type="submit" class="btn btn-primary" onclick="abrirLinkInsta()">Salvar</button>
             </form>
           </div>
           <div class="col-lg-5 order-1 order-lg-2 hero-img" data-aos="zoom-out">
@@ -62,15 +62,15 @@
   <a href="#" id="scroll-top" class="scroll-top" a>
   <div id="preloader"></div>
   <script>
-    function abrirLink() {
+    function abrirLinkInsta() {
         var link = document.getElementById('yt_dlp').value;
         
         if (link) {
-          if (link.includes("instagram.com")) {
+          if (link.includes(".com")) {  //.depois de testar ajustar para instagram.com
               var encodedLink = encodeURIComponent(link);
-              window.open('http://x:8000/download/'+ encodedLink, '_blank');
+              window.open('http://192.168.2.110:8000/download/'+ encodedLink, '_blank');
           } else {
-              alert("Por favor, insira um link válido do YouTube.");
+              alert("Por favor, insira um link válido.");
           }
             
         } else {
