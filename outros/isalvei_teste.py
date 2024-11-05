@@ -31,20 +31,31 @@ class RequestHandler(SimpleHTTPRequestHandler):
         if self.path.startswith('/download/'):
             # Extrair a URL do vídeo diretamente da rota
             video_url = urllib.parse.unquote(self.path[len('/download/'):])
-
-            ydl_opts = {
+            ydl_opts = {}
+            if 'instagram.com' in video_url:
+                ydl_opts = {
                 'format': 'bestvideo[ext=mp4]',
                 'outtmpl': '/var/www/html/download/%(id)s.%(ext)s',
-                'format': 'best',
-                'quiet': True,
-                'noplaylist': True,
-                'username': 'oauth',
-                'password': '',
-                'cookiefile': '/var/www/isalvei/ytt_cookies.txt',
-                #'max_duration': '60m',
-                #'cookiesfrombrowser': ('chrome',),
-                'api_key': API_KEY
-            }
+                'format': 'best',                    
+                'username': 'SEU_USUARIO_INSTAGRAM',
+                'password': 'SUA_SENHA_INSTAGRAM',
+                'sleep_interval': 5,
+                'max_sleep_interval': 15,
+                }
+            elif 'youtube.com' in video_url or 'youtu.be' in video_url:
+                    ydl_opts = {
+                        'format': 'bestvideo[ext=mp4]',
+                        'outtmpl': '/var/www/html/download/%(id)s.%(ext)s',
+                        'format': 'best',
+                        'quiet': True,
+                        'noplaylist': True,
+                        'username': 'oauth',
+                        'password': '',
+                        'cookiefile': '/var/www/isalvei/ytt_cookies.txt',
+                        #'max_duration': '60m',
+                        #'cookiesfrombrowser': ('chrome',),
+                        'api_key': API_KEY
+                    }
 
             try:
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -53,9 +64,8 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
                 file_url = os.path.abspath(file_path)
                 base_url = 'http://192.168.2.110'
-                file_url.replace('/var/www/html', base_url).replace(':8000', '')
-                file_url = file_url.replace('/var/www/html', base_url).replace(':8000', '').replace('#', '%23').replace(' ','%20')
-
+                file_url.replace('/var/www/html', base_url)
+                file_url = file_url.replace('/var/www/html', base_url).replace('#', '%23').replace(' ','%20')
                 response_html = f'''<script>window.location.href = '{file_url}';</script>
                 <!DOCTYPE html>
                 <html lang="pt-BR">
