@@ -22,7 +22,7 @@
   <link href="assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
   <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
   <link href="assets/css/main.css" rel="stylesheet">
-
+  <script src="assets/js/abrirLinkInsta.js"></script>
 </head>
 <body class="index-page">
   <header id="header" class="header d-flex align-items-center fixed-top">
@@ -73,24 +73,7 @@
     </section>
   <a href="#" id="scroll-top" class="scroll-top" a>
   <div id="preloader"></div>
-  <script>
-    function abrirLinkInsta() {
-        var link = document.getElementById('yt_dlp').value;
-        
-        if (link) {
-          if (link.includes("instagram.com")) {  //.depois de testar ajustar para instagram.com
-              var encodedLink = encodeURIComponent(link);
-              window.open('http://127.0.0.1:8000/download/'+ encodedLink, '_blank');
-          } else {
-              alert("Por favor, insira um link válido.");
-          }
-            
-        } else {
-            alert("O campo de link está vazio.");
-        }
-    }
-  </script>
-
+  
   <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="assets/vendor/php-email-form/validate.js"></script>
   <script src="assets/vendor/aos/aos.js"></script>
