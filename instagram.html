@@ -57,6 +57,18 @@
             <img src="assets/img/Instagram_Logo.png" class="img-fluid mb-3 mb-lg-0" alt="">
           </div>
         </div>
+        <section class="tutorial">
+          <iframe id="downloadFrame" width="300" height="600" title="teste" style="display: none;" ></iframe>
+          <div class="container">
+            <div class="separator" data-aos="fade-up" ></div>
+          </div>   
+          <br><h3 id="tutorial" data-aos="fade-up">Como baixar do Instagram?</h3>
+          <ol data-aos="fade-up">
+            <br><li> <strong>Copie a URL</strong> </li>Abra o aplicativo ou site do Instagram, vá até o vídeo, Reels que você deseja baixar. Copie a URL.<br>
+            <br><li><strong>Cole o link</strong></li>Volte para o site iSalvei.com.br, cole o link no campo de entrada na parte superior da página e clique no botão "Baixar" para iniciar o download.<br>
+            <br><li><strong>Baixar</strong></li>Uma nova aba será aberta, aguarde o carregamento e Pronto! O arquivo foi salvo no seu dispositivo.
+          </ol>
+        </section>
       </div>
     </section>
   <a href="#" id="scroll-top" class="scroll-top" a>
@@ -66,7 +78,7 @@
         var link = document.getElementById('yt_dlp').value;
         
         if (link) {
-          if (link.includes(".com")) {  //.depois de testar ajustar para instagram.com
+          if (link.includes("instagram.com")) {  //.depois de testar ajustar para instagram.com
               var encodedLink = encodeURIComponent(link);
               window.open('http://127.0.0.1:8000/download/'+ encodedLink, '_blank');
           } else {
