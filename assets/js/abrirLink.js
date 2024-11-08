@@ -4,7 +4,7 @@ function abrirLink() {
           if (link.includes("youtube.com")||link.includes(("youtu.be"))) {
               var encodedLink = encodeURIComponent(link);
               
-              window.open('http://192.168.2.110:8000/download/'+ encodedLink, '_blank');
+              window.open('http://127.0.0.1:8000/download/'+ encodedLink, '_blank');
 
                // Descomentar os dois abaixo para abrir o video na mesma tela abaixo do botao baixar
                

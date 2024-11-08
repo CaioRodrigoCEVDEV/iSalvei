@@ -24,8 +24,10 @@ HTML_FORM = '''
 </body>
 </html>
 '''
-with open('/etc/api_key.txt', 'r') as f:
-    API_KEY = f.read().strip()
+with open('/etc/api_key.txt', 'r') as y:
+    API_KEY = y.read().strip()
+with open('/etc/api_key_i.txt', 'r') as i:
+    API_KEY_I = i.read().strip()
 class RequestHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith('/download/'):
@@ -37,8 +39,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 'format': 'bestvideo[ext=mp4]',
                 'outtmpl': '/var/www/html/download/%(id)s.%(ext)s',
                 'format': 'best',                    
-                'username': 'SEU_USUARIO_INSTAGRAM',
-                'password': 'SUA_SENHA_INSTAGRAM',
+                'api_key': API_KEY_I,
                 'sleep_interval': 5,
                 'max_sleep_interval': 15,
                 }
@@ -63,7 +64,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
                     file_path = ydl.prepare_filename(info)
 
                 file_url = os.path.abspath(file_path)
-                base_url = 'http://192.168.2.110'
+                base_url = 'http://127.0.0.1'
                 file_url.replace('/var/www/html', base_url)
                 file_url = file_url.replace('/var/www/html', base_url).replace('#', '%23').replace(' ','%20')
                 response_html = f'''<script>window.location.href = '{file_url}';</script>
@@ -78,11 +79,6 @@ class RequestHandler(SimpleHTTPRequestHandler):
                 </body>
                 </html>
                 '''
-                #file_name = os.path.abspath(file_path)
-                #self.send_response(200)
-                #self.send_header('Content-Type', 'application/octet-stream')
-                #self.send_header('Content-Disposition', 'attachment; filename="{file_name}"')
-                #self.end_headers()
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
@@ -99,12 +95,6 @@ class RequestHandler(SimpleHTTPRequestHandler):
              self.send_header('Content-type', 'text/html')
              self.end_headers()
              self.wfile.write(HTML_FORM.encode('utf-8'))
-               #file_name = os.path.abspath(file_path)
-               #self.send_response(200)
-               #self.send_header('Content-Type', 'application/octet-stream')
-               #self.send_header('Content-Disposition', 'attachment; filename="{file_name}"')
-               #self.end_headers()
-
         else:
             self.send_error(404, "File not found")
 
