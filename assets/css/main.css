@@ -555,3 +555,9 @@ section,
 .tutorial #tutorial{
   text-align: center;
 }
+
+.footer {
+  color: white;
+  background-color: #0e1d34;  ;
+  text-align: center;
+}
