@@ -17,7 +17,10 @@
   <link href="assets/vendor/fontawesome-free/css/all.min.css" rel="stylesheet">
   <link href="assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
   <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
-  <link href="assets/css/main.css" rel="stylesheet"> 
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2830123708729244"
+     crossorigin="anonymous"></script>
+  <link href="assets/css/main.css" rel="stylesheet">
+  <script src="assets/js/abrirLinkX.js" ></script>
 </head>
 <body class="index-page">
   <header id="header" class="header d-flex align-items-center fixed-top">
@@ -27,42 +30,55 @@
       </a>
       <nav id="navmenu" class="navmenu">
         <ul>
-          <li><a href="index.html" class="active">Início<br></a></li>
+          <li><a href="index.html">Início<br></a></li>
           <li><a href="youtube.html">Youtube</a></li>
           <li><a href="instagram.html">Instagram</a></li>
-          <li><a href="facebook.html">Facebook </a></li>
-          <li><a href="x.html">X</a></li>
+          <li><a href="facebook.html">Facebook</a></li>
+          <li><a href="x.html" class="active">X</a></li>
         <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+        </ul>
       </nav>
     </div>
   </header>
   <main class="main">
-    <section id="hero" class="hero2  section dark-background">
+    <section id="hero" class="hero section dark-background">
       <div class="container">
         <div class="row gy-4 d-flex justify-content-between">
           <div class="col-lg-6 order-2 order-lg-1 d-flex flex-column justify-content-center">
-            <h2 data-aos="fade-up">Salve seu memes!</h2>
-            <p data-aos="fade-up" data-aos-delay="100">O iSalvei é uma ferramenta fácil de usar, que garante praticidade e rapidez no download de conteúdos. Com apenas alguns cliques, você pode salvar seus vídeos favoritos diretamente no seu dispositivo. Selecione abaixo qual plataforma deseja salvar os seus videos/memes favoritos!</p>
-              <section style="text-align: center;">
-              <a href="youtube.html" class="btn btn-primary" data-aos="fade-up"><i style="margin: 20%;" class="bi bi-youtube" ></i> Youtube</a>
-              <a href="instagram.html" class="btn btn-primary" data-aos="fade-up"><i style="margin: 20%;" class="bi bi-instagram"></i> Instagram</a>
-              <a href="facebook.html" class="btn btn-primary" data-aos="fade-up" ><i style="margin: 20%;" class="bi bi-facebook"></i> Facebook</a>
-              </section>
-          </div>
-          <div class="col-lg-5 order-1 order-lg-2 hero-img" >
-            <img src="assets/img/iSalvei.png" class="img-fluid mb-3 mb-lg-0" alt="iSalvei">
-          </div>
-        </div>
+            <h2 data-aos="fade-up">Baixar Video do X</h2>
+            <p data-aos="fade-up" data-aos-delay="100">Com o iSalvei você pode baixar vídeos gratuitamente em alta qualidade. Nosso downloader pode ser usado tanto no PC quanto no celular, permitindo que você use em qualquer lugar</p>
+            <form action="#" class="form-search d-flex align-items-stretch mb-3" data-aos="fade-up" data-aos-delay="200">
+              <input type="text" class="form-control" placeholder="insira o link Youtube" id="yt_dlp">
+              <button type="submit" class="btn btn-primary" onclick="abrirLinkX()" ><i style="margin: 10%;" class="bi bi-box-arrow-in-down" ></i>Baixar</button>
+            </form>
+          </div>      
+             <div class="col-lg-5 order-1 order-lg-2 hero-img" data-aos="zoom-out">
+             <img src="assets/img/LogoX.png" class="img-fluid mb-3 mb-lg-0" alt="">
+         </div> 
       </div>
-    </section>
+          <section class="tutorial">
+            <iframe id="downloadFrame" width="300" height="600" title="teste" style="display: none;" ></iframe>
+            <div class="container">
+              <div class="separator" data-aos="fade-up" ></div>
+            </div>   
+            <br><h3 id="tutorial" data-aos="fade-up">Como baixar do X?</h3>
+            <ol data-aos="fade-up">
+              <br><li> <strong>Copie a URL</strong> </li>Abra o aplicativo ou site do X, vá até o vídeo que você deseja baixar. Copie a URL.<br>
+              <br><li><strong>Cole o link</strong></li>Volte para o site iSalvei.com.br, cole o link no campo de entrada na parte superior da página e clique no botão "Baixar" para iniciar o download.<br>
+              <br><li><strong>Baixar</strong></li>Uma nova aba será aberta aguarde o carregamento e Pronto! O arquivo foi salvo no seu dispositivo.
+            </ol>
+          </section>
+     </section>
   </main>
-  <a href="#" id="scroll-top" class="scroll-top" a>
+     <a href="#" id="scroll-top" class="scroll-top" a>
+  <div id="preloader"></div>
   <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="assets/vendor/php-email-form/validate.js"></script>
   <script src="assets/vendor/aos/aos.js"></script>
   <script src="assets/vendor/purecounter/purecounter_vanilla.js"></script>
   <script src="assets/vendor/glightbox/js/glightbox.min.js"></script>
   <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
-  <script src="assets/js/main.js"></script>
+  <script src="assets/js/main.js"></script> 
+</script>
 </body>
 </html>
