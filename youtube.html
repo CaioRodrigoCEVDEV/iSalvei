@@ -57,7 +57,29 @@
          </div> 
       </div>
           <section class="tutorial">
-            <iframe id="downloadFrame" width="300" height="600" title="teste" style="display: none;" ></iframe>
+
+            <iframe id="downloadFrame" width="360" height="512" title="Download" style="display: none;" ></iframe>
+            <p id="status">Carregando...</p>
+
+            <script>
+                // Obtendo o iframe e o elemento de status
+                const iframe = document.getElementById("downloadFrame");
+                const status = document.getElementById("status");
+        
+                // Adicionando o evento 'load' para o iframe
+                iframe.addEventListener("load", function() {
+                    // Oculta a mensagem de carregamento
+                    status.textContent = "Carregado com sucesso!";
+                    // Exibe o iframe
+                    iframe.style.display = "block";
+                });
+        
+                // Opcional: exibe uma mensagem se houver algum erro no carregamento
+                iframe.addEventListener("error", function() {
+                    status.textContent = "Erro ao carregar o conteúdo.";
+                });
+            </script>
+            
             <div class="container">
               <div class="separator" data-aos="fade-up" ></div>
             </div>   
@@ -71,6 +93,7 @@
      </section>
   </main>
      <a href="#" id="scroll-top" class="scroll-top" a>
+  <footer class="footer" id="ft">Copyright © 2024 isalvei.com.br</footer>
   <div id="preloader"></div>
   <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="assets/vendor/php-email-form/validate.js"></script>
