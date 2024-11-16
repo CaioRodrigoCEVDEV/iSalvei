@@ -94,7 +94,6 @@
           <li><a href="index.html">Início<br></a></li>
           <li><a href="youtube.html" class="active">Youtube</a></li>
           <li><a href="instagram.html">Instagram</a></li>
-          <li><a href="facebook.html">Facebook</a></li>
           <li><a href="x.html">X</a></li>
         <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
         </ul>
@@ -102,15 +101,18 @@
     </div>
   </header>
   <main class="main">
+    <div id="loadingModal">
+      <div>Por favor, aguarde. Estamos preparando o vídeo para download...</div>
+    </div>
     <section id="hero" class="hero section dark-background">
       <div class="container">
         <div class="row gy-4 d-flex justify-content-between">
           <div class="col-lg-6 order-2 order-lg-1 d-flex flex-column justify-content-center">
             <h2 data-aos="fade-up">Baixar Video do Youtube</h2>
             <p data-aos="fade-up" data-aos-delay="100">Com o iSalvei você pode baixar vídeos gratuitamente em alta qualidade. Nosso downloader pode ser usado tanto no PC quanto no celular, permitindo que você use em qualquer lugar</p>
-            <form action="#" class="form-search d-flex align-items-stretch mb-3" data-aos="fade-up" data-aos-delay="200">
+            <form id="videoForm" action="#" class="form-search d-flex align-items-stretch mb-3" data-aos="fade-up" data-aos-delay="200">
               <input type="text" class="form-control" placeholder="insira o link Youtube" id="yt_dlp">
-              <button type="submit" class="btn btn-primary" onclick="extrairID()"><i style="margin: 10%;" class="bi bi-box-arrow-in-down" ></i>Baixar</button>
+              <button id="baixar" type="submit" class="btn btn-primary" ><i style="margin: 10%;" class="bi bi-box-arrow-in-down" ></i>Baixar</button>
             </form>
           </div>      
              <div class="col-lg-5 order-1 order-lg-2 hero-img" data-aos="zoom-out">
@@ -118,34 +120,6 @@
          </div> 
       </div>
           <section class="tutorial">
-
-            <iframe id="downloadFrame" width="360" height="360" title="Download" style="display: none;" ></iframe>
-            <h1>Extrair ID de Vídeo ou Link</h1>
-
-        
-        
-            <p id="resultado"></p>
-            <!-- <p id="status">Carregando...</p>
-
-            <script>
-                // Obtendo o iframe e o elemento de status
-                const iframe = document.getElementById("downloadFrame");
-                const status = document.getElementById("status");
-        
-                // Adicionando o evento 'load' para o iframe
-                iframe.addEventListener("load", function() {
-                    // Oculta a mensagem de carregamento
-                    status.textContent = "Carregado com sucesso!";
-                    // Exibe o iframe
-                    iframe.style.display = "block";
-                });
-        
-                // Opcional: exibe uma mensagem se houver algum erro no carregamento
-                iframe.addEventListener("error", function() {
-                    status.textContent = "Erro ao carregar o conteúdo.";
-                });
-            </script> -->
-            
             <div class="container">
               <div class="separator" data-aos="fade-up" ></div>
             </div>   
@@ -175,6 +149,61 @@
      <a href="#" id="scroll-top" class="scroll-top" a>
   <footer class="footer" id="ft">Copyright © 2024 isalvei.com.br</footer>
   <div id="preloader"></div>
+  <script>
+    document.getElementById('videoForm').addEventListener('submit', async (event) => {
+        event.preventDefault(); // Impede o envio padrão do formulário
+
+        const url = document.getElementById('yt_dlp').value;
+        const responseDiv = document.getElementById('response');
+        const loadingModal = document.getElementById('loadingModal');
+        const baixar = document.getElementById('baixar')
+
+        // Exibe o modal de "Aguarde"
+        loadingModal.style.display = 'flex';
+        baixar.style.display = 'none';
+
+        // Enviar o POST para a API FastAPI
+        try {
+            const response = await fetch('https://89.117.33.245:5000/download', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: url }),
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+
+                if (result.status === 'success' && result.id) {
+                    // Gerar URL do vídeo baixado
+                    const downloadLink = `https://89.117.33.245/download/${result.id}.mp4`; // Ajuste o caminho conforme necessário
+
+                    // Criar um link de download dinâmico
+                    const a = document.createElement('a');
+                    a.href = downloadLink;
+                    a.download = result.title || 'video'; // Definir o nome do arquivo (se disponível)
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+
+                    // Exibir mensagem de sucesso
+                    responseDiv.textContent = `Vídeo pronto para download: ${result.title}`;
+                } else {
+                    responseDiv.textContent = 'Erro: Informações do vídeo não encontradas.';
+                }
+            } else {
+                responseDiv.textContent = 'Erro ao fazer o download do vídeo.';
+            }
+        } catch (error) {
+            responseDiv.textContent = `Erro: ${error.message}`;
+        } finally {
+            // Esconde o modal de "Aguarde" após o processamento
+            loadingModal.style.display = 'none';
+            baixar.style.display = 'flex'
+        }
+    });
+</script>
   <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="assets/vendor/php-email-form/validate.js"></script>
   <script src="assets/vendor/aos/aos.js"></script>
