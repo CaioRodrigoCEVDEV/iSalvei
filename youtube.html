@@ -21,6 +21,67 @@
      crossorigin="anonymous"></script>
   <link href="assets/css/main.css" rel="stylesheet">
   <script src="assets/js/abrirLink.js" ></script>
+  <script>
+    function extrairID() {
+        var url = document.getElementById("yt_dlp").value;
+        var id = "";
+
+        // Regex para URL padrão do YouTube
+        var regexYouTube = /(?:https?:\/\/(?:www\.)?youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=|.*[?&]v%3D))([^"&?\/\s]{11})/;
+        var matchYouTube = url.match(regexYouTube);
+
+        if (matchYouTube) {
+            id = matchYouTube[1];
+        } else {
+            // Regex para URL curta (youtu.be)
+            var regexShortYouTube = /(?:https?:\/\/(?:www\.)?youtu\.be\/)([^"&?\/\s]{11})/;
+            var matchShortYouTube = url.match(regexShortYouTube);
+
+            if (matchShortYouTube) {
+                id = matchShortYouTube[1];
+            } else {
+                // Regex para URL do YouTube Shorts
+                var regexShortsYouTube = /(?:https?:\/\/(?:www\.)?youtube\.com\/shorts\/)([^"&?\/\s]{11})/;
+                var matchShortsYouTube = url.match(regexShortsYouTube);
+
+                if (matchShortsYouTube) {
+                    id = matchShortsYouTube[1];
+                } else {
+                    // Regex para URL do Facebook
+                    var regexFacebook = /(?:https?:\/\/(?:www\.)?facebook\.com\/share\/r\/)([^"&?\/\s]+)/;
+                    var matchFacebook = url.match(regexFacebook);
+
+                    if (matchFacebook) {
+                        id = matchFacebook[1];
+                    } else {
+                        // Regex para URL do X (antigo Twitter)
+                        var regexX = /(?:https?:\/\/(?:www\.)?x\.com\/[^\/]+\/status\/)(\d+)/;
+                        var matchX = url.match(regexX);
+
+                        if (matchX) {
+                            id = matchX[1];
+                        } else {
+                            // Regex para URL do Instagram
+                            var regexInstagram = /(?:https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|tv)\/)([^"&?\/\s]+)/;
+                            var matchInstagram = url.match(regexInstagram);
+
+                            if (matchInstagram) {
+                                id = matchInstagram[1];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Exibe o ID ou uma mensagem de erro
+        if (id) {
+            document.getElementById("resultado").innerText = "ID do Link: " + id;
+        } else {
+            document.getElementById("resultado").innerText = "URL inválida. Tente outra.";
+        }
+    }
+</script>
 </head>
 <body class="index-page">
   <header id="header" class="header d-flex align-items-center fixed-top">
@@ -49,7 +110,7 @@
             <p data-aos="fade-up" data-aos-delay="100">Com o iSalvei você pode baixar vídeos gratuitamente em alta qualidade. Nosso downloader pode ser usado tanto no PC quanto no celular, permitindo que você use em qualquer lugar</p>
             <form action="#" class="form-search d-flex align-items-stretch mb-3" data-aos="fade-up" data-aos-delay="200">
               <input type="text" class="form-control" placeholder="insira o link Youtube" id="yt_dlp">
-              <button type="submit" class="btn btn-primary" onclick="abrirLink()" ><i style="margin: 10%;" class="bi bi-box-arrow-in-down" ></i>Baixar</button>
+              <button type="submit" class="btn btn-primary" onclick="extrairID()"><i style="margin: 10%;" class="bi bi-box-arrow-in-down" ></i>Baixar</button>
             </form>
           </div>      
              <div class="col-lg-5 order-1 order-lg-2 hero-img" data-aos="zoom-out">
@@ -58,8 +119,13 @@
       </div>
           <section class="tutorial">
 
-            <iframe id="downloadFrame" width="360" height="512" title="Download" style="display: none;" ></iframe>
-            <p id="status">Carregando...</p>
+            <iframe id="downloadFrame" width="360" height="360" title="Download" style="display: none;" ></iframe>
+            <h1>Extrair ID de Vídeo ou Link</h1>
+
+        
+        
+            <p id="resultado"></p>
+            <!-- <p id="status">Carregando...</p>
 
             <script>
                 // Obtendo o iframe e o elemento de status
@@ -78,7 +144,7 @@
                 iframe.addEventListener("error", function() {
                     status.textContent = "Erro ao carregar o conteúdo.";
                 });
-            </script>
+            </script> -->
             
             <div class="container">
               <div class="separator" data-aos="fade-up" ></div>
@@ -90,6 +156,20 @@
               <br><li><strong>Baixar</strong></li>Uma nova aba será aberta aguarde o carregamento e Pronto! O arquivo foi salvo no seu dispositivo.
             </ol>
           </section>
+          <section id="contato">
+            <div class="container">
+              <div class="separator" data-aos="fade-up" style="margin-top: 50px;" ></div>
+            </div>   
+            <p class="contato" data-aos="fade-up" data-aos-delay="100" style="margin-top: 20px ;">
+    
+              Nosso objetivo é oferecer a você uma plataforma rápida e confiável para download dos seus conteúdos favoritos. Valorizamos a experiência do usuário e estamos sempre empenhados em manter a qualidade e a eficiência dos nossos serviços.
+              
+              Se tiver sugestões, dúvidas ou reclamações, não hesite em entrar em contato conosco. Sua opinião é essencial para que possamos aprimorar ainda mais nossos serviços e garantir que você tenha sempre a melhor experiência.
+              
+              Para falar conosco, envie um e-mail para contato@isalvei.com.br Nossa equipe estará à disposição para ajudar com qualquer questão.
+              
+              Obrigado por escolher o iSalvei para seus downloads!</p>
+          </section>          
      </section>
   </main>
      <a href="#" id="scroll-top" class="scroll-top" a>
