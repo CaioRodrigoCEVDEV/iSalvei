@@ -556,19 +556,14 @@ section,
   text-align: center;
 }
 
-<<<<<<< HEAD
-=======
 #contato {
   text-align: center;
 }
 
->>>>>>> self_page
 .footer {
   color: white;
   background-color: #0e1d34;  ;
   text-align: center;
-<<<<<<< HEAD
-=======
 }
 /* Estilos para o modal de "Aguarde" */
 #loadingModal {
@@ -588,5 +583,4 @@ section,
     font-size: 30px;
     font-weight: 600;
     text-align: center;
->>>>>>> self_page
 }

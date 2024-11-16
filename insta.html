@@ -91,8 +91,6 @@
     <div id="preloader"></div>
   </main>
 <footer class="footer" id="ft">Copyright © 2024 isalvei.com.br</footer> 
-<<<<<<< HEAD:instagram.html
-=======
 <script>
   document.getElementById('videoForm').addEventListener('submit', async (event) => {
       event.preventDefault(); // Impede o envio padrão do formulário
@@ -101,6 +99,7 @@
       const responseDiv = document.getElementById('response');
       const loadingModal = document.getElementById('loadingModal');
       const baixar = document.getElementById('baixar')
+      const yt_dlp = document.getElementById('yt_dlp')
 
       // Exibe o modal de "Aguarde"
       loadingModal.style.display = 'flex';
@@ -144,11 +143,11 @@
       } finally {
           // Esconde o modal de "Aguarde" após o processamento
           loadingModal.style.display = 'none';
-          baixar.style.display = 'flex'
+          yt_dlp.value= '';
+          baixar.style.display = 'inline';
       }
   });
 </script>
->>>>>>> self_page:insta.html
   <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="assets/vendor/aos/aos.js"></script>
   <script src="assets/vendor/purecounter/purecounter_vanilla.js"></script>

@@ -120,32 +120,6 @@
          </div> 
       </div>
           <section class="tutorial">
-<<<<<<< HEAD
-
-            <iframe id="downloadFrame" width="360" height="512" title="Download" style="display: none;" ></iframe>
-            <p id="status">Carregando...</p>
-
-            <script>
-                // Obtendo o iframe e o elemento de status
-                const iframe = document.getElementById("downloadFrame");
-                const status = document.getElementById("status");
-        
-                // Adicionando o evento 'load' para o iframe
-                iframe.addEventListener("load", function() {
-                    // Oculta a mensagem de carregamento
-                    status.textContent = "Carregado com sucesso!";
-                    // Exibe o iframe
-                    iframe.style.display = "block";
-                });
-        
-                // Opcional: exibe uma mensagem se houver algum erro no carregamento
-                iframe.addEventListener("error", function() {
-                    status.textContent = "Erro ao carregar o conteúdo.";
-                });
-            </script>
-            
-=======
->>>>>>> self_page
             <div class="container">
               <div class="separator" data-aos="fade-up" ></div>
             </div>   
@@ -182,7 +156,8 @@
         const url = document.getElementById('yt_dlp').value;
         const responseDiv = document.getElementById('response');
         const loadingModal = document.getElementById('loadingModal');
-        const baixar = document.getElementById('baixar')
+        const baixar = document.getElementById('baixar');
+        const yt_dlp = document.getElementById('yt_dlp');
 
         // Exibe o modal de "Aguarde"
         loadingModal.style.display = 'flex';
@@ -226,7 +201,8 @@
         } finally {
             // Esconde o modal de "Aguarde" após o processamento
             loadingModal.style.display = 'none';
-            baixar.style.display = 'flex'
+            yt_dlp.value = '';
+            baixar.style.display = 'inline'
         }
     });
 </script>
