@@ -141,10 +141,12 @@
       } catch (error) {
           responseDiv.textContent = `Erro: ${error.message}`;
       } finally {
-          // Esconde o modal de "Aguarde" após o processamento
-          loadingModal.style.display = 'none';
-          yt_dlp.value= '';
-          baixar.style.display = 'inline';
+            // Esconder o modal de "Aguarde" após o processamento
+            loadingModal.style.display = 'none';
+            // Clear input 
+            yt_dlp.value = '';
+            // apresentar botão novamente
+            baixar.style.display = 'inline'
       }
   });
 </script>
