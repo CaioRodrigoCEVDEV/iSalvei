@@ -90,65 +90,73 @@
   <footer class="footer" id="ft">Copyright © 2024 isalvei.com.br</footer>
      <a href="#" id="scroll-top" class="scroll-top" a>
   <div id="preloader"></div>
+  <script>
+    document.getElementById('videoForm').addEventListener('submit', async (event) => {
+    event.preventDefault(); // Impede o envio padrão do formulário
 
-<script>
-  document.getElementById('videoForm').addEventListener('submit', async (event) => {
-      event.preventDefault(); // Impede o envio padrão do formulário
+    const url = document.getElementById('yt_dlp').value;
+    const responseDiv = document.getElementById('response');
+    const loadingModal = document.getElementById('loadingModal');
+    const baixar = document.getElementById('baixar')
+    const yt_dlp = document.getElementById('yt_dlp')
 
-      const url = document.getElementById('yt_dlp').value;
-      const responseDiv = document.getElementById('response');
-      const loadingModal = document.getElementById('loadingModal');
-      const baixar = document.getElementById('baixar')
-      const yt_dlp = document.getElementById('yt_dlp')
+    if (url) {
+      //if (url.includes("instagram.com")) {
+      if (url.includes("x.com")) {  
+          // Exibe o modal de "Aguarde"
+          loadingModal.style.display = 'flex';
+          baixar.style.display = 'none';
+              // Enviar o POST para a API FastAPI
+          try {
+              const response = await fetch('https://89.117.33.245:5000/download', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ url: url }),
+              });
 
-      // Exibe o modal de "Aguarde"
-      loadingModal.style.display = 'flex';
-      baixar.style.display = 'none';
+              if (response.ok) {
+                  const result = await response.json();
 
-      // Enviar o POST para a API FastAPI
-      try {
-          const response = await fetch('https://89.117.33.245:5000/download', {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({ url: url }),
-          });
+                  if (result.status === 'success' && result.id) {
+                      // Gerar URL do vídeo baixado
+                      const downloadLink = `https://89.117.33.245/download/${result.id}.mp4`; // Ajuste o caminho conforme necessário
 
-          if (response.ok) {
-              const result = await response.json();
+                      // Criar um link de download dinâmico
+                      const a = document.createElement('a');
+                      a.href = downloadLink;
+                      a.download = result.title || 'video'; // Definir o nome do arquivo (se disponível)
+                      document.body.appendChild(a);
+                      a.click();
+                      document.body.removeChild(a);
 
-              if (result.status === 'success' && result.id) {
-                  // Gerar URL do vídeo baixado
-                  const downloadLink = `https://89.117.33.245/download/${result.id}.mp4`; // Ajuste o caminho conforme necessário
-
-                  // Criar um link de download dinâmico
-                  const a = document.createElement('a');
-                  a.href = downloadLink;
-                  a.download = result.title || 'video'; // Definir o nome do arquivo (se disponível)
-                  document.body.appendChild(a);
-                  a.click();
-                  document.body.removeChild(a);
-
-                  // Exibir mensagem de sucesso
-                  responseDiv.textContent = `Vídeo pronto para download: ${result.title}`;
+                      // Exibir mensagem de sucesso
+                      responseDiv.textContent = `Vídeo pronto para download: ${result.title}`;
+                  } else {
+                      responseDiv.textContent = 'Erro: Informações do vídeo não encontradas.';
+                  }
               } else {
-                  responseDiv.textContent = 'Erro: Informações do vídeo não encontradas.';
+                  responseDiv.textContent = 'Erro ao fazer o download do vídeo.';
               }
-          } else {
-              responseDiv.textContent = 'Erro ao fazer o download do vídeo.';
+          } catch (error) {
+              responseDiv.textContent = `Erro: ${error.message}`;
+          } finally {
+                // Esconder o modal de "Aguarde" após o processamento
+                loadingModal.style.display = 'none';
+                // Clear input 
+                yt_dlp.value = '';
+                // apresentar botão novamente
+                baixar.style.display = 'inline'
           }
-      } catch (error) {
-          responseDiv.textContent = `Erro: ${error.message}`;
-      } finally {
-            // Esconder o modal de "Aguarde" após o processamento
-            loadingModal.style.display = 'none';
-            // Clear input 
-            yt_dlp.value = '';
-            // apresentar botão novamente
-            baixar.style.display = 'inline'
-      }
-  });
+  } else {
+        alert("Por favor, insira um link válido.");
+    }
+      
+  } else {
+      alert("O campo de link está vazio.");
+  }
+});
 </script>
   <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="assets/vendor/php-email-form/validate.js"></script>

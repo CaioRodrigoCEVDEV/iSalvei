@@ -20,68 +20,6 @@
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2830123708729244"
      crossorigin="anonymous"></script>
   <link href="assets/css/main.css" rel="stylesheet">
-  <script src="assets/js/abrirLink.js" ></script>
-  <script>
-    function extrairID() {
-        var url = document.getElementById("yt_dlp").value;
-        var id = "";
-
-        // Regex para URL padrão do YouTube
-        var regexYouTube = /(?:https?:\/\/(?:www\.)?youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=|.*[?&]v%3D))([^"&?\/\s]{11})/;
-        var matchYouTube = url.match(regexYouTube);
-
-        if (matchYouTube) {
-            id = matchYouTube[1];
-        } else {
-            // Regex para URL curta (youtu.be)
-            var regexShortYouTube = /(?:https?:\/\/(?:www\.)?youtu\.be\/)([^"&?\/\s]{11})/;
-            var matchShortYouTube = url.match(regexShortYouTube);
-
-            if (matchShortYouTube) {
-                id = matchShortYouTube[1];
-            } else {
-                // Regex para URL do YouTube Shorts
-                var regexShortsYouTube = /(?:https?:\/\/(?:www\.)?youtube\.com\/shorts\/)([^"&?\/\s]{11})/;
-                var matchShortsYouTube = url.match(regexShortsYouTube);
-
-                if (matchShortsYouTube) {
-                    id = matchShortsYouTube[1];
-                } else {
-                    // Regex para URL do Facebook
-                    var regexFacebook = /(?:https?:\/\/(?:www\.)?facebook\.com\/share\/r\/)([^"&?\/\s]+)/;
-                    var matchFacebook = url.match(regexFacebook);
-
-                    if (matchFacebook) {
-                        id = matchFacebook[1];
-                    } else {
-                        // Regex para URL do X (antigo Twitter)
-                        var regexX = /(?:https?:\/\/(?:www\.)?x\.com\/[^\/]+\/status\/)(\d+)/;
-                        var matchX = url.match(regexX);
-
-                        if (matchX) {
-                            id = matchX[1];
-                        } else {
-                            // Regex para URL do Instagram
-                            var regexInstagram = /(?:https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|tv)\/)([^"&?\/\s]+)/;
-                            var matchInstagram = url.match(regexInstagram);
-
-                            if (matchInstagram) {
-                                id = matchInstagram[1];
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Exibe o ID ou uma mensagem de erro
-        if (id) {
-            document.getElementById("resultado").innerText = "ID do Link: " + id;
-        } else {
-            document.getElementById("resultado").innerText = "URL inválida. Tente outra.";
-        }
-    }
-</script>
 </head>
 <body class="index-page">
   <header id="header" class="header d-flex align-items-center fixed-top">
@@ -93,7 +31,7 @@
         <ul>
           <li><a href="index.html">Início<br></a></li>
           <li><a href="youtube.html" class="active">Youtube</a></li>
-          <li><a href="instagram.html">Instagram</a></li>
+          <li><a href="insta.html">Instagram</a></li>
           <li><a href="x.html">X</a></li>
         <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
         </ul>
@@ -147,67 +85,78 @@
      </section>
   </main>
      <a href="#" id="scroll-top" class="scroll-top" a>
-  <footer class="footer" id="ft">Copyright © 2024 isalvei.com.br</footer>
   <div id="preloader"></div>
-  <script>
-    document.getElementById('videoForm').addEventListener('submit', async (event) => {
-        event.preventDefault(); // Impede o envio padrão do formulário
 
-        const url = document.getElementById('yt_dlp').value;
-        const responseDiv = document.getElementById('response');
-        const loadingModal = document.getElementById('loadingModal');
-        const baixar = document.getElementById('baixar');
-        const yt_dlp = document.getElementById('yt_dlp');
+<footer class="footer" id="ft">Copyright © 2024 isalvei.com.br</footer> 
+<script>
+      document.getElementById('videoForm').addEventListener('submit', async (event) => {
+      event.preventDefault(); // Impede o envio padrão do formulário
 
-        // Exibe o modal de "Aguarde"
-        loadingModal.style.display = 'flex';
-        baixar.style.display = 'none';
+      const url = document.getElementById('yt_dlp').value;
+      const responseDiv = document.getElementById('response');
+      const loadingModal = document.getElementById('loadingModal');
+      const baixar = document.getElementById('baixar')
+      const yt_dlp = document.getElementById('yt_dlp')
 
-        // Enviar o POST para a API FastAPI
-        try {
-            const response = await fetch('https://89.117.33.245:5000/download', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ url: url }),
-            });
+      if (url) {
+        //if (url.includes("instagram.com")) {
+        if (url.includes("youtube.com") || url.includes(("youtu.be"))) {  
+            // Exibe o modal de "Aguarde"
+            loadingModal.style.display = 'flex';
+            baixar.style.display = 'none';
+                // Enviar o POST para a API FastAPI
+            try {
+                const response = await fetch('https://89.117.33.245:5000/download', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url: url }),
+                });
 
-            if (response.ok) {
-                const result = await response.json();
+                if (response.ok) {
+                    const result = await response.json();
 
-                if (result.status === 'success' && result.id) {
-                    // Gerar URL do vídeo baixado
-                    const downloadLink = `https://89.117.33.245/download/${result.id}.mp4`; // Ajuste o caminho conforme necessário
+                    if (result.status === 'success' && result.id) {
+                        // Gerar URL do vídeo baixado
+                        const downloadLink = `https://89.117.33.245/download/${result.id}.mp4`; // Ajuste o caminho conforme necessário
 
-                    // Criar um link de download dinâmico
-                    const a = document.createElement('a');
-                    a.href = downloadLink;
-                    a.download = result.title || 'video'; // Definir o nome do arquivo (se disponível)
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
+                        // Criar um link de download dinâmico
+                        const a = document.createElement('a');
+                        a.href = downloadLink;
+                        a.download = result.title || 'video'; // Definir o nome do arquivo (se disponível)
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
 
-                    // Exibir mensagem de sucesso
-                    responseDiv.textContent = `Vídeo pronto para download: ${result.title}`;
+                        // Exibir mensagem de sucesso
+                        responseDiv.textContent = `Vídeo pronto para download: ${result.title}`;
+                    } else {
+                        responseDiv.textContent = 'Erro: Informações do vídeo não encontradas.';
+                    }
                 } else {
-                    responseDiv.textContent = 'Erro: Informações do vídeo não encontradas.';
+                    responseDiv.textContent = 'Erro ao fazer o download do vídeo.';
                 }
-            } else {
-                responseDiv.textContent = 'Erro ao fazer o download do vídeo.';
+            } catch (error) {
+                responseDiv.textContent = `Erro: ${error.message}`;
+            } finally {
+                  // Esconder o modal de "Aguarde" após o processamento
+                  loadingModal.style.display = 'none';
+                  // Clear input 
+                  yt_dlp.value = '';
+                  // apresentar botão novamente
+                  baixar.style.display = 'inline'
             }
-        } catch (error) {
-            responseDiv.textContent = `Erro: ${error.message}`;
-        } finally {
-            // Esconder o modal de "Aguarde" após o processamento
-            loadingModal.style.display = 'none';
-            // Clear input 
-            yt_dlp.value = '';
-            // apresentar botão novamente
-            baixar.style.display = 'inline'
-        }
-    });
+    } else {
+          alert("Por favor, insira um link válido.");
+      }
+        
+    } else {
+        alert("O campo de link está vazio.");
+    }
+  });
 </script>
+
   <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="assets/vendor/php-email-form/validate.js"></script>
   <script src="assets/vendor/aos/aos.js"></script>
