@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <title>iSalvei</title>
+  <meta name="Baixe e salve seus videos!" content="">
+  <meta name="keywords" content="">
+
+  <link href="assets/img/favicon.png" rel="icon">
+  <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <link href="https://fonts.googleapis.com" rel="preconnect">
+  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
+
+  <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="assets/vendor/aos/aos.css" rel="stylesheet">
+  <link href="assets/vendor/fontawesome-free/css/all.min.css" rel="stylesheet">
+  <link href="assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+  <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+  <link href="assets/css/style.css" rel="stylesheet">
+  <script src="assets/js/abrirLinkInsta.js"></script>
+</head>
+<body class="index-page">
+  <header id="header" class="header d-flex align-items-center fixed-top">
+    <div class="container-fluid container-xl position-relative d-flex align-items-center">
+      <a href="index.html" class="logo d-flex align-items-center me-auto">
+        <h1 class="sitename">iSalvei</h1>
+      </a>
+      <nav id="navmenu" class="navmenu">
+        <ul>
+          <li><a href="index.html">Início<br></a></li>
+          <!-- <li><a href="youtube.html">Youtube</a></li> -->
+          <li><a href="insta.html" class="active">Instagram</a></li>
+          <li><a href="x.html">X</a></li>
+        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+      </nav>
+    </div>
+  </header>
+  <main class="main">
+    <div id="loadingModal">
+      <div>Por favor, aguarde. Estamos preparando o vídeo para download...</div>
+    </div>
+    <section id="hero" class="hero section dark-background">
+      <div class="container">
+        <div class="row gy-4 d-flex justify-content-between">
+          <div class="col-lg-6 order-2 order-lg-1 d-flex flex-column justify-content-center">
+            <h2 data-aos="fade-up">Baixar Video do Instagram</h2>
+            <p data-aos="fade-up" data-aos-delay="100">O iSalvei foi criado para permitir que você baixe vídeos IG para qualquer finalidade que desejar.</p>
+            <form id="videoForm" action="#" class="form-search d-flex align-items-stretch mb-3" data-aos="fade-up" data-aos-delay="200">
+              <input type="text" class="form-control" placeholder="insira o link X" id="yt_dlp">
+              <button id="baixar" type="submit" class="btn btn-primary" >Baixar</button>
+            </form>
+          </div>
+          <div class="col-lg-5 order-1 order-lg-2 hero-img" data-aos="zoom-out">
+            <img src="assets/img/LogoX.png" class="img-fluid mb-3 mb-lg-0" alt="">
+          </div>
+        </div>
+        <section class="tutorial">
+          <iframe id="downloadFrame" width="3" height="6" title="teste" style="display: none;" ></iframe>
+          <div class="container">
+            <div class="separator" data-aos="fade-up" ></div>
+          </div>   
+          <br><h3 id="tutorial" data-aos="fade-up">Como baixar do X?</h3>
+          <ol data-aos="fade-up">
+            <br><li> <strong>Copie a URL</strong> </li>Abra o aplicativo ou site do X, vá até o vídeo, Reels que você deseja baixar. Copie a URL.<br>
+            <br><li><strong>Cole o link</strong></li>Volte para o site iSalvei.com.br, cole o link no campo de entrada na parte superior da página e clique no botão "Baixar" para iniciar o download.<br>
+            <br><li><strong>Baixar</strong></li>Uma nova aba será aberta, aguarde o carregamento e Pronto! O arquivo foi salvo no seu dispositivo.
+          </ol>
+        </section>
+        <section id="contato">
+          <div class="container">
+            <div class="separator" data-aos="fade-up" style="margin-top: 50px;" ></div>
+          </div>   
+          <p class="contato" data-aos="fade-up" data-aos-delay="100" style="margin-top: 20px ;">
+  
+            Nosso objetivo é oferecer a você uma plataforma rápida e confiável para download dos seus conteúdos favoritos. Valorizamos a experiência do usuário e estamos sempre empenhados em manter a qualidade e a eficiência dos nossos serviços.
+            
+            Se tiver sugestões, dúvidas ou reclamações, não hesite em entrar em contato conosco. Sua opinião é essencial para que possamos aprimorar ainda mais nossos serviços e garantir que você tenha sempre a melhor experiência.
+            
+            Para falar conosco, envie um e-mail para contato@isalvei.com.br Nossa equipe estará à disposição para ajudar com qualquer questão.
+            
+            Obrigado por escolher o iSalvei para seus downloads!</p>
+        </section>      
+      </div>
+    </section>
+    <a href="#" id="scroll-top" class="scroll-top" a>
+    <div id="preloader"></div>
+  </main>
+<footer class="footer" id="ft">Copyright © 2024 isalvei.com.br</footer> 
+<script>
+document.getElementById('videoForm').addEventListener('submit', async (event) => {
+  event.preventDefault();
+
+  const urlInput = document.getElementById('yt_dlp');
+  const responseDiv = document.getElementById('response');
+  const loadingModal = document.getElementById('loadingModal');
+  const baixarBtn = document.getElementById('baixar');
+
+  const url = urlInput.value && urlInput.value.trim();
+  if (!url) {
+    responseDiv.textContent = 'Cole a URL antes de baixar.';
+    return;
+  }
+
+  // mostrar loading
+  if (loadingModal) loadingModal.style.display = 'flex';
+  if (baixarBtn) baixarBtn.style.display = 'none';
+
+  try {
+    // Base URL: usa o mesmo host da página (evita CORS) — se você rodar API em host/porta diferente,
+    // ajuste BASE_API abaixo (ex: 'http://localhost:4001' ou 'https://meu.servidor.com')
+    const BASE_API = window.location.origin; // ideal: "/api" relative
+    // Se sua API for /api/download ou /download, escolha endpoint correto:
+    // aqui usamos /download?url=...
+    const endpoint = `${BASE_API}/download?url=${encodeURIComponent(url)}`;
+
+    const headers = {};
+    // se usa API key salva no localStorage
+    const apiKey = localStorage.getItem('apiKey');
+    if (apiKey) headers['X-API-KEY'] = apiKey;
+
+    const resp = await fetch(endpoint, {
+      method: 'GET',
+      headers
+    });
+
+    if (!resp.ok) {
+      // tenta ler json de erro
+      let texte = resp.statusText || 'Erro';
+      try { const j = await resp.json(); texte = j.error || j.details || texte; } catch(_) {}
+      responseDiv.textContent = `Erro: ${resp.status} ${texte}`;
+      return;
+    }
+
+    // se a resposta for um JSON (algum erro do servidor), tenta tratar
+    const contentType = resp.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const j = await resp.json();
+      responseDiv.textContent = j.error || JSON.stringify(j);
+      return;
+    }
+
+    // baixa o blob
+    const blob = await resp.blob();
+    // tenta extrair filename do header Content-Disposition
+    const cd = resp.headers.get('Content-Disposition') || '';
+    let filename = 'video';
+    const m = cd.match(/filename="(.+?)"/);
+    if (m) filename = m[1];
+    else {
+      // tenta extrair extensão do content-type
+      const ext = contentType.split('/').pop().split(';')[0] || 'mp4';
+      filename = `video.${ext}`;
+    }
+
+    // criar link e forçar download
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(blobUrl);
+
+    responseDiv.textContent = `Download concluído: ${filename}`;
+  } catch (err) {
+    console.error(err);
+    responseDiv.textContent = `Erro: ${err.message}`;
+  } finally {
+    if (loadingModal) loadingModal.style.display = 'none';
+    if (baixarBtn) baixarBtn.style.display = 'inline';
+    if (urlInput) urlInput.value = '';
+  }
+});
+</script>
+
+  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/vendor/aos/aos.js"></script>
+  <script src="assets/vendor/purecounter/purecounter_vanilla.js"></script>
+  <script src="assets/vendor/glightbox/js/glightbox.min.js"></script>
+  <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
+  <script src="assets/js/main.js"></script>
+<script src="api_integration.js"></script>
+</body>
+
+</html>
