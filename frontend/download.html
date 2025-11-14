@@ -1,0 +1,111 @@
+
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Download — iSalvei</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h2>Baixar vídeo</h2>
+      <p class="small">Cole a URL pública do post (Instagram / X / Twitter) e escolha a qualidade.</p>
+      <div class="row" style="margin-bottom:12px">
+        <input id="url" class="input-url" placeholder="https://www.instagram.com/reel/..." />
+        <select id="format" class="select" style="max-width:160px;">
+          <option value="best">Melhor qualidade</option>
+          <option value="720">720p</option>
+          <option value="480">480p</option>
+          <option value="audio">Áudio (mp3)</option>
+        </select>
+        <button id="previewBtn" class="btn">Pré-visualizar</button>
+        <button id="downloadBtn" class="btn">Baixar</button>
+      </div>
+      <div id="msg" class="small"></div>
+      <div style="margin-top:16px;">
+        <video id="previewVideo" controls playsinline style="width:100%; max-height:480px; display:none;"></video>
+      </div>
+    </div>
+  </div>
+
+<script>
+async function saveBlobAsFile(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename || 'video';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function setMsg(msg, isError=false){
+  const el = document.getElementById('msg');
+  el.textContent = msg;
+  el.style.color = isError ? '#b91c1c' : '#111827';
+}
+
+function getApiKey(){ return localStorage.getItem('apiKey') || ''; }
+
+async function fetchDownloadBlob(url, format){
+  const key = getApiKey();
+  const headers = key ? {'X-API-KEY': key} : {};
+  const q = '/api/download?url=' + encodeURIComponent(url) + '&format=' + encodeURIComponent(format);
+  const resp = await fetch(q, { method: 'GET', headers });
+  return resp;
+}
+
+document.getElementById('previewBtn').addEventListener('click', async ()=>{
+  const url = document.getElementById('url').value.trim();
+  const format = document.getElementById('format').value;
+  if(!url) return setMsg('Cole uma URL antes de pré-visualizar.', true);
+  setMsg('Carregando preview — pode demorar...');
+  try{
+    const resp = await fetchDownloadBlob(url, format);
+    if(!resp.ok){
+      const j = await resp.json().catch(()=>null);
+      setMsg('Erro: ' + (j?.error || resp.statusText), true);
+      return;
+    }
+    const blob = await resp.blob();
+    const video = document.getElementById('previewVideo');
+    video.src = URL.createObjectURL(blob);
+    video.style.display = 'block';
+    try{ await video.play(); }catch(e){}
+    setMsg('Preview carregado.');
+  }catch(e){
+    console.error(e);
+    setMsg('Erro ao buscar preview: ' + e.message, true);
+  }
+});
+
+document.getElementById('downloadBtn').addEventListener('click', async ()=>{
+  const url = document.getElementById('url').value.trim();
+  const format = document.getElementById('format').value;
+  if(!url) return setMsg('Cole uma URL antes de baixar.', true);
+  setMsg('Processando download...');
+  try{
+    const resp = await fetchDownloadBlob(url, format);
+    if(!resp.ok){
+      const j = await resp.json().catch(()=>null);
+      setMsg('Erro: ' + (j?.error || resp.statusText), true);
+      return;
+    }
+    const blob = await resp.blob();
+    const cd = resp.headers.get('Content-Disposition') || '';
+    let filename = 'video.mp4';
+    const m = cd.match(/filename="(.+?)"/);
+    if(m) filename = m[1];
+    await saveBlobAsFile(blob, filename);
+    setMsg('Download concluído: ' + filename);
+  }catch(e){
+    console.error(e);
+    setMsg('Erro no download: ' + e.message, true);
+  }
+});
+</script>
+</body>
+</html>
