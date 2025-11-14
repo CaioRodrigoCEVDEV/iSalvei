@@ -70,7 +70,12 @@ async function downloadToTemp(url, formatArg) {
   if (COOKIES_FILE) args.push('--cookies', COOKIES_FILE);
 
   return new Promise((resolve, reject) => {
-    const child = spawn('yt-dlp', args);
+   //local 
+   // const child = spawn('yt-dlp', args);
+   
+   //no servidor
+   const child = spawn('/usr/local/bin/yt-dlp', args);
+
     let stderr = '';
     child.stderr.on('data', d => stderr += d.toString());
     child.on('error', err => reject(new Error('Failed to start yt-dlp: ' + err.message)));
