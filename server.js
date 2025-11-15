@@ -26,6 +26,7 @@ app.use(express.static(path.join(__dirname, 'frontend')));
 
 // parse json
 app.use(express.json());
+app.set('trust proxy', 1);
 
 // ==============================
 // Rate limiter: apply ONLY to API / download routes
