@@ -207,6 +207,10 @@ function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 // Routes
 // ==============================
 
+app.get('/sw.js', (req, res) => {
+  res.sendFile(__dirname + '/sw.js');
+});
+
 // Simple health
 app.get('/health', (req, res) => res.json({ ok: true }));
 

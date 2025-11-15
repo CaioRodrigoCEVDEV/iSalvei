@@ -3,17 +3,22 @@
 
 <head>
   <meta charset="utf-8">
-  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>iSalvei</title>
-  <meta name="Baixe e salve seus videos!" content="">
-  <meta name="keywords" content="">
+  <meta name="description" content="Baixe e salve seus vídeos!">
+  <meta name="keywords" content="download, vídeos, memes, salvar">
+  <meta name="theme-color" content="#0d6efd">
+
+  <link rel="manifest" href="/manifest.json">
   <link href="assets/img/favicon.png" rel="icon">
   <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
   <link href="https://fonts.googleapis.com" rel="preconnect">
   <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
   <link
     href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
     rel="stylesheet">
+
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
   <link href="assets/vendor/aos/aos.css" rel="stylesheet">
@@ -21,10 +26,20 @@
   <link href="assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
   <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
   <link href="assets/css/style.css" rel="stylesheet">
+
+  <style>
+    /* botão de instalação oculto por padrão */
+    #btnInstall {
+      display: none;
+      position: fixed;
+      right: 1rem;
+      bottom: 1rem;
+      z-index: 9999;
+    }
+  </style>
 </head>
 
 <body class="index-page">
-  
   <header id="header" class="header d-flex align-items-center fixed-top">
     <div class="container-fluid container-xl position-relative d-flex align-items-center">
       <a href="index.html" class="logo d-flex align-items-center me-auto">
@@ -32,42 +47,44 @@
       </a>
       <nav id="navmenu" class="navmenu">
         <ul>
-          <li><a href="index.html" class="active">Início<br></a></li>
-          <!-- <li><a href="youtube.html">Youtube</a></li> -->
+          <li><a href="index.html" class="active">Início</a></li>
           <li><a href="x.html">X</a></li>
-          <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+        </ul>
+        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
       </nav>
     </div>
   </header>
 
-  <main class="main">
-    <section id="hero" class="hero2  section dark-background">
+  <main class="main" style="padding-top: 80px;">
+    <section id="hero" class="hero2 section dark-background">
       <div class="container">
-          <div>
+        <div>
+          <!-- Botão oculto que só aparece quando o Chrome liberar o install prompt -->
+          <button id="btnInstall" class="btn btn-success">
+            📲 Instalar App
+          </button>
+        </div>
 
-      <!-- Botão oculto que só aparece quando o Chrome liberar o install prompt -->
-      <button id="btnInstall" class="btn btn-success">
-        📲 Instalar App
-      </button>
-
-    </div>
         <div class="row gy-4 d-flex justify-content-between">
           <div class="col-lg-6 order-2 order-lg-1 d-flex flex-column justify-content-center">
-            <h2 data-aos="fade-up">Salve seu memes!</h2>
+            <h2 data-aos="fade-up">Salve seus memes!</h2>
             <p data-aos="fade-up" data-aos-delay="100">O iSalvei é uma ferramenta fácil de usar, que garante praticidade
               e rapidez no download de conteúdos. Com apenas alguns cliques, você pode salvar seus vídeos favoritos
-              diretamente no seu dispositivo. Selecione abaixo qual plataforma deseja salvar os seus videos/memes
+              diretamente no seu dispositivo. Selecione abaixo qual plataforma deseja salvar os seus vídeos/memes
               favoritos!</p>
             <section style="text-align: center;">
-              <!-- <a href="youtube.html" class="btn btn-primary" data-aos="fade-up"><i style="margin: 20%;" class="bi bi-youtube" ></i> Youtube</a> -->
-              <a href="x.html" class="btn btn-primary" data-aos="fade-up"><i style="margin: 20%;"
-                  class="bi bi-twitter-x"></i> x.com</a>
+              <a href="x.html" class="btn btn-primary" data-aos="fade-up">
+                <i style="margin-right: .5rem;" class="bi bi-twitter-x"></i> x.com
+              </a>
             </section>
           </div>
+
           <div class="col-lg-5 order-1 order-lg-2 hero-img">
             <img src="assets/img/iSalvei.png" class="img-fluid mb-3 mb-lg-0" alt="iSalvei">
           </div>
-        </div><br><br>
+        </div>
+
+        <br><br>
         <section id="contato">
           <div class="container">
             <div class="separator" data-aos="fade-up"></div>
@@ -78,61 +95,52 @@
             favoritos. Valorizamos a experiência do usuário e estamos sempre empenhados em manter a qualidade e a
             eficiência dos nossos serviços.
 
-            Se tiver sugestões, dúvidas ou reclamações, não hesite em entrar em contato conosco. Sua opinião é essencial
-            para que possamos aprimorar ainda mais nossos serviços e garantir que você tenha sempre a melhor
-            experiência.
-
-            Para falar conosco, envie um e-mail para contato@isalvei.com.br Nossa equipe estará à disposição para ajudar
-            com qualquer questão.
-
-            Obrigado por escolher o iSalvei para seus downloads!</p>
+            Para falar conosco, envie um e-mail para contato@isalvei.com.br. Obrigado por escolher o iSalvei!</p>
         </section>
+      </div>
     </section>
-    </div>
-    </section>
-    
 
     <footer class="footer" id="ft">Copyright © 2024 isalvei.com.br</footer>
   </main>
 
-  <a href="#" id="scroll-top" class="scroll-top" a>
-  
-    <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="assets/vendor/aos/aos.js"></script>
-    <script src="assets/vendor/purecounter/purecounter_vanilla.js"></script>
-    <script src="assets/vendor/glightbox/js/glightbox.min.js"></script>
-    <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
-    <script src="assets/js/main.js"></script>
-    <script src="api_integration.js"></script>
-    <script>
+  <a href="#" id="scroll-top" class="scroll-top">▲</a>
 
-      // Botão de instalação PWA
-      let deferredPrompt;
-      const btnInstall = document.getElementById("btnInstall");
+  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/vendor/aos/aos.js"></script>
+  <script src="assets/vendor/purecounter/purecounter_vanilla.js"></script>
+  <script src="assets/vendor/glightbox/js/glightbox.min.js"></script>
+  <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
+  <script src="assets/js/main.js"></script>
+  <script src="api_integration.js"></script>
 
-      // Captura o evento antes do Chrome exibir o banner nativo
-      window.addEventListener("beforeinstallprompt", (e) => {
-        e.preventDefault(); // impede o banner automático
-        deferredPrompt = e;
-        btnInstall.style.display = "block"; // mostra botão manual
-      });
+  <script>
+    // PWA installation flow
+    let deferredPrompt;
+    const btnInstall = document.getElementById("btnInstall");
 
-      // Quando o usuário clicar no botão
-      btnInstall.addEventListener("click", () => {
-        btnInstall.style.display = "none"; // esconde o botão
-        deferredPrompt.prompt(); // dispara o banner nativo
-        deferredPrompt.userChoice.then((choiceResult) => {
-          console.log("Usuário escolheu:", choiceResult.outcome);
-          deferredPrompt = null;
-        });
-      });
+    window.addEventListener("beforeinstallprompt", (e) => {
+      // previne o prompt automático e guarda o evento
+      e.preventDefault();
+      deferredPrompt = e;
+      btnInstall.style.display = "block";
+    });
 
-      // Registro do Service Worker
-      if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("/sw.js").then(() => {
-          console.log("Service Worker registrado");
-        })}
-    </script>
+    btnInstall.addEventListener("click", async () => {
+      if (!deferredPrompt) return;
+      btnInstall.style.display = "none";
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      console.log("Usuário escolheu:", choice.outcome);
+      deferredPrompt = null;
+    });
+
+    // Registro do Service Worker (assegure que sw.js esteja na raiz do site)
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js")
+        .then(reg => console.log("Service Worker registrado:", reg.scope))
+        .catch(err => console.error("Falha ao registrar Service Worker:", err));
+    }
+  </script>
 </body>
 
 </html>
