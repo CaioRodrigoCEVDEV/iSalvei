@@ -584,3 +584,14 @@ section,
     font-weight: 600;
     text-align: center;
 }
+
+
+.download-btn.downloading {
+  opacity: 0.8;
+  cursor: wait;
+}
+
+/* spinner no botão (opcional) */
+.download-btn.downloading .btn-text::after {
+  content: ' ⏳'; /* ou inserir um spinner via background-image */
+}
