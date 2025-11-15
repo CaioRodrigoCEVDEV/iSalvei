@@ -211,6 +211,10 @@ app.get('/sw.js', (req, res) => {
   res.sendFile(__dirname + '/sw.js');
 });
 
+app.get('/manifest.json', (req, res) => {
+  res.sendFile(__dirname + '/manifest.json');
+});
+
 // Simple health
 app.get('/health', (req, res) => res.json({ ok: true }));
 
