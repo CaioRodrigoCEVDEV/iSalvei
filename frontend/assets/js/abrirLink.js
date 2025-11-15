@@ -3,15 +3,16 @@ function abrirLink() {
         if (link) {
           if (link.includes("youtube.com")||link.includes(("youtu.be"))) {
               var encodedLink = encodeURIComponent(link);
-              
-              //window.open('http://127.0.0.1:8000/download/'+ encodedLink, '_blank');
-
-               // Descomentar os dois abaixo para abrir o video na mesma tela abaixo do botao baixar
                
+<<<<<<< HEAD:assets/js/abrirLink.js
+             // window.open('http://127.0.0.1:8000/download/'+ encodedLink, '_blank');
+
+=======
                document.getElementById('downloadFrame').style.display = 'block';
                document.getElementById('downloadFrame').src = 'http://127.0.0.1:8000/download/' + encodedLink;
                //document.getElementById('downloadFrame').style.display = 'block';
                //document.getElementById('downloadFrame').src = 'https://89.117.33.245:8000/download/' + encodedLink;
+>>>>>>> 5233757251fb6b775a24b5f7123ac0cdf367f042:frontend/assets/js/abrirLink.js
           } else {
               alert("Por favor, insira um link válido do YouTube.");
           }             
