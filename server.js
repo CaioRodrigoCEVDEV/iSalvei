@@ -71,10 +71,10 @@ async function downloadToTemp(url, formatArg) {
 
   return new Promise((resolve, reject) => {
    //local 
-   // const child = spawn('yt-dlp', args);
+    const child = spawn('yt-dlp', args);
    
    //no servidor
-   const child = spawn('/usr/local/bin/yt-dlp', args);
+   //const child = spawn('/usr/local/bin/yt-dlp', args);
 
     let stderr = '';
     child.stderr.on('data', d => stderr += d.toString());
