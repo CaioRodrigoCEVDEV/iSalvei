@@ -10,7 +10,7 @@ const { v4: uuidv4 } = require('uuid');
 
 const DB_PATH = process.env.API_DB_PATH || path.join(__dirname, 'data', 'api.db');
 const PORT = process.env.API_PORT || process.env.PORT || 3000;
-const YTDLP_TIMEOUT = Number(process.env.YTDLP_TIMEOUT || 240000);
+const YTDLP_TIMEOUT = Number(process.env.YTDLP_TIMEOUT || 120000);
 const TMP_DIR = process.env.TMP_DIR || undefined;
 const COOKIES_FILE = process.env.COOKIES_FILE || '';
 

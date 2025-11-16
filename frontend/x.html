@@ -330,7 +330,8 @@
             a.click();
             a.remove();
             URL.revokeObjectURL(blobUrl);
-
+            
+            botao.textContent = 'Colar';
             responseDiv.textContent = `Download concluído: ${filename}`;
             showToast('Download concluído.');
           } catch (err) {
