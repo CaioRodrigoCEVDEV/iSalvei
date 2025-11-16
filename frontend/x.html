@@ -26,10 +26,11 @@
   <style>
     /* Loading modal (overlay) */
     #loadingModal {
-      display: none; /* oculto por padrão */
+      display: none;
+      /* oculto por padrão */
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.6);
+      background: rgba(0, 0, 0, 0.6);
       z-index: 9998;
       align-items: center;
       justify-content: center;
@@ -37,11 +38,12 @@
       font-size: 1.1rem;
       text-align: center;
     }
+
     #loadingModal .box {
       background: #111;
       padding: 20px 24px;
       border-radius: 8px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
     }
 
     /* Toast */
@@ -64,6 +66,7 @@
       opacity: 0.85;
       cursor: wait;
     }
+
     .download-btn .spinner {
       margin-left: 8px;
     }
@@ -105,10 +108,16 @@
         <div class="row gy-4 d-flex justify-content-between">
           <div class="col-lg-6 order-2 order-lg-1 d-flex flex-column justify-content-center">
             <h2 data-aos="fade-up">Baixar Vídeo do X</h2>
-            <p data-aos="fade-up" data-aos-delay="100">O iSalvei foi criado para permitir que você baixe vídeos X/IG.</p>
+            <p data-aos="fade-up" data-aos-delay="100">O iSalvei foi criado para permitir que você baixe vídeos X/IG.
+            </p>
 
-            <form id="videoForm" action="#" class="form-search d-flex align-items-stretch mb-3" data-aos="fade-up" data-aos-delay="200">
-              <input type="text" id="yt_dlp" class="form-control" placeholder="insira o link X" aria-label="Link do vídeo">
+            <form id="videoForm" action="#" class="form-search d-flex align-items-stretch mb-3" data-aos="fade-up"
+              data-aos-delay="200">
+              <input type="text" id="yt_dlp" class="form-control" placeholder="insira o link X"
+                aria-label="Link do vídeo">
+              <button id="btnColar" type="button" class="btn btn-primary">
+                <span class="btn-text">Colar</span>
+              </button>
               <button id="baixar" type="submit" class="btn btn-primary download-btn" aria-disabled="false">
                 <span class="btn-text">Baixar</span>
                 <span class="spinner" style="display:none;">⏳</span>
@@ -130,7 +139,8 @@
           <div class="container">
             <div class="separator" data-aos="fade-up"></div>
           </div>
-          <br><h3 id="tutorial" data-aos="fade-up">Como baixar do X?</h3>
+          <br>
+          <h3 id="tutorial" data-aos="fade-up">Como baixar do X?</h3>
           <ol data-aos="fade-up">
             <li><strong>Copie a URL</strong></li>
             Abra o aplicativo ou site do X, vá até o vídeo que deseja baixar e copie a URL.<br><br>
@@ -159,171 +169,195 @@
 
   <footer class="footer" id="ft">Copyright © 2024 isalvei.com.br</footer>
 
+  <script>
+    const input = document.getElementById("yt_dlp");
+    const botao = document.getElementById("btnColar");
+
+    botao.addEventListener('click', async () => {
+      try {
+        if (input.value === '') {
+          const texto = await navigator.clipboard.readText();
+          input.value = texto;
+          botao.textContent = 'Limpar';
+
+        } else {
+          input.value = '';
+          botao.textContent = 'Colar';
+        }
+
+      }
+      catch (error) {
+        alert("erro ao colar" + error);
+      }
+    })
+
+  </script>
+
   <!-- Scripts: 1 único bloco JS que faz tudo -->
   <script>
-    (function () {
-      const form = document.getElementById('videoForm');
-      const urlInput = document.getElementById('yt_dlp');
-      const loadingModal = document.getElementById('loadingModal');
-      const baixarBtn = document.getElementById('baixar');
-      const toast = document.getElementById('download-toast');
-      const responseDiv = document.getElementById('response');
-      const spinner = baixarBtn.querySelector('.spinner');
-      const btnText = baixarBtn.querySelector('.btn-text');
+      (function () {
+        const form = document.getElementById('videoForm');
+        const urlInput = document.getElementById('yt_dlp');
+        const loadingModal = document.getElementById('loadingModal');
+        const baixarBtn = document.getElementById('baixar');
+        const toast = document.getElementById('download-toast');
+        const responseDiv = document.getElementById('response');
+        const spinner = baixarBtn.querySelector('.spinner');
+        const btnText = baixarBtn.querySelector('.btn-text');
 
-      function showToast(msg, timeout = 3500) {
-        if (!toast) return;
-        toast.textContent = msg;
-        toast.style.display = 'block';
-        clearTimeout(toast._t);
-        toast._t = setTimeout(() => { toast.style.display = 'none'; }, timeout);
-      }
-
-      function setDownloadingState(isDownloading) {
-        if (isDownloading) {
-          baixarBtn.dataset.downloading = 'true';
-          baixarBtn.setAttribute('aria-disabled', 'true');
-          baixarBtn.disabled = true;
-          baixarBtn.classList.add('downloading');
-          if (btnText) btnText.textContent = 'Download em andamento…';
-          if (spinner) spinner.style.display = 'inline';
-          if (loadingModal) loadingModal.style.display = 'flex';
-        } else {
-          baixarBtn.dataset.downloading = 'false';
-          baixarBtn.setAttribute('aria-disabled', 'false');
-          baixarBtn.disabled = false;
-          baixarBtn.classList.remove('downloading');
-          if (btnText) btnText.textContent = 'Baixar';
-          if (spinner) spinner.style.display = 'none';
-          if (loadingModal) loadingModal.style.display = 'none';
-        }
-      }
-
-      // Timeout helper
-      function fetchWithTimeout(resource, options = {}) {
-        const { timeout = 120000 } = options;
-        const controller = new AbortController();
-        const id = setTimeout(() => controller.abort(), timeout);
-        return fetch(resource, { ...options, signal: controller.signal })
-          .finally(() => clearTimeout(id));
-      }
-
-      form.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        responseDiv.textContent = '';
-        const url = urlInput.value && urlInput.value.trim();
-
-        if (!url) {
-          responseDiv.textContent = 'Cole a URL antes de baixar.';
-          return;
+        function showToast(msg, timeout = 3500) {
+          if (!toast) return;
+          toast.textContent = msg;
+          toast.style.display = 'block';
+          clearTimeout(toast._t);
+          toast._t = setTimeout(() => { toast.style.display = 'none'; }, timeout);
         }
 
-        // evita double-click
-        if (baixarBtn.dataset.downloading === 'true') {
-          showToast('Download já em andamento.');
-          return;
+        function setDownloadingState(isDownloading) {
+          if (isDownloading) {
+            baixarBtn.dataset.downloading = 'true';
+            baixarBtn.setAttribute('aria-disabled', 'true');
+            baixarBtn.disabled = true;
+            baixarBtn.classList.add('downloading');
+            if (btnText) btnText.textContent = 'Download em andamento…';
+            if (spinner) spinner.style.display = 'inline';
+            if (loadingModal) loadingModal.style.display = 'flex';
+          } else {
+            baixarBtn.dataset.downloading = 'false';
+            baixarBtn.setAttribute('aria-disabled', 'false');
+            baixarBtn.disabled = false;
+            baixarBtn.classList.remove('downloading');
+            if (btnText) btnText.textContent = 'Baixar';
+            if (spinner) spinner.style.display = 'none';
+            if (loadingModal) loadingModal.style.display = 'none';
+          }
         }
 
-        setDownloadingState(true);
-        showToast('Iniciando download...');
+        // Timeout helper
+        function fetchWithTimeout(resource, options = {}) {
+          const { timeout = 120000 } = options;
+          const controller = new AbortController();
+          const id = setTimeout(() => controller.abort(), timeout);
+          return fetch(resource, { ...options, signal: controller.signal })
+            .finally(() => clearTimeout(id));
+        }
 
-        try {
-          const BASE_API = window.location.origin; // ajusta se necessário
-          const endpoint = `${BASE_API}/download?url=${encodeURIComponent(url)}`;
+        form.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          responseDiv.textContent = '';
+          const url = urlInput.value && urlInput.value.trim();
 
-          const headers = {};
-          // opcional: usar API key do localStorage
-          const apiKey = localStorage.getItem('apiKey');
-          if (apiKey) headers['X-API-KEY'] = apiKey;
-
-          const resp = await fetchWithTimeout(endpoint, {
-            method: 'GET',
-            headers,
-            timeout: 120000
-          });
-
-          if (!resp.ok) {
-            // tenta extrair mensagem do corpo JSON/Texto
-            let msg = `Erro ${resp.status}`;
-            try {
-              const j = await resp.json();
-              msg = j.error || j.message || msg;
-            } catch (_) {
-              try { const t = await resp.text(); if (t) msg += ' - ' + t; } catch (_) {}
-            }
-            responseDiv.textContent = msg;
-            showToast('Erro ao preparar download.');
+          if (!url) {
+            responseDiv.textContent = 'Cole a URL antes de baixar.';
             return;
           }
 
-          // Se for JSON de erro/aviso
-          const contentType = resp.headers.get('content-type') || '';
-          if (contentType.includes('application/json')) {
-            const j = await resp.json();
-            // Se o backend retornar um downloadUrl (link temporário), usamos ele
-            if (j.downloadUrl) {
-              // abrir em nova aba para que o navegador faça o download (mais confiável)
-              window.open(j.downloadUrl, '_blank');
-              responseDiv.textContent = 'Download iniciado.';
-              showToast('Download iniciado.');
-              return;
-            } else {
-              responseDiv.textContent = j.error || JSON.stringify(j);
+          // evita double-click
+          if (baixarBtn.dataset.downloading === 'true') {
+            showToast('Download já em andamento.');
+            return;
+          }
+
+          setDownloadingState(true);
+          showToast('Iniciando download...');
+
+          try {
+            const BASE_API = window.location.origin; // ajusta se necessário
+            const endpoint = `${BASE_API}/download?url=${encodeURIComponent(url)}`;
+
+            const headers = {};
+            // opcional: usar API key do localStorage
+            const apiKey = localStorage.getItem('apiKey');
+            if (apiKey) headers['X-API-KEY'] = apiKey;
+
+            const resp = await fetchWithTimeout(endpoint, {
+              method: 'GET',
+              headers,
+              timeout: 120000
+            });
+
+            if (!resp.ok) {
+              // tenta extrair mensagem do corpo JSON/Texto
+              let msg = `Erro ${resp.status}`;
+              try {
+                const j = await resp.json();
+                msg = j.error || j.message || msg;
+              } catch (_) {
+                try { const t = await resp.text(); if (t) msg += ' - ' + t; } catch (_) { }
+              }
+              responseDiv.textContent = msg;
+              showToast('Erro ao preparar download.');
               return;
             }
+
+            // Se for JSON de erro/aviso
+            const contentType = resp.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
+              const j = await resp.json();
+              // Se o backend retornar um downloadUrl (link temporário), usamos ele
+              if (j.downloadUrl) {
+                // abrir em nova aba para que o navegador faça o download (mais confiável)
+                window.open(j.downloadUrl, '_blank');
+                responseDiv.textContent = 'Download iniciado.';
+                showToast('Download iniciado.');
+                return;
+              } else {
+                responseDiv.textContent = j.error || JSON.stringify(j);
+                return;
+              }
+            }
+
+            // se veio blob (stream do vídeo)
+            const blob = await resp.blob();
+
+            // tenta extrair filename do header Content-Disposition
+            const cd = resp.headers.get('Content-Disposition') || '';
+            let filename = 'video';
+            const m1 = cd.match(/filename\*=UTF-8''(.+?)($|;)/);
+            const m2 = cd.match(/filename="?([^";]+)"?/);
+            if (m1) filename = decodeURIComponent(m1[1]);
+            else if (m2) filename = m2[1];
+            else {
+              const ext = (contentType.split('/').pop() || 'mp4').split(';')[0];
+              filename = `video.${ext}`;
+            }
+
+            // criar link para download
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(blobUrl);
+
+            responseDiv.textContent = `Download concluído: ${filename}`;
+            showToast('Download concluído.');
+          } catch (err) {
+            console.error(err);
+            if (err.name === 'AbortError') {
+              responseDiv.textContent = 'Tempo de download esgotado.';
+              showToast('Tempo de download esgotado.');
+            } else {
+              responseDiv.textContent = `Erro: ${err.message || err}`;
+              showToast('Erro ao iniciar download.');
+            }
+          } finally {
+            // limpa input e reabilita botão após pequena espera para evitar cliques acidentais
+            urlInput.value = '';
+            setTimeout(() => setDownloadingState(false), 700);
           }
+        });
 
-          // se veio blob (stream do vídeo)
-          const blob = await resp.blob();
-
-          // tenta extrair filename do header Content-Disposition
-          const cd = resp.headers.get('Content-Disposition') || '';
-          let filename = 'video';
-          const m1 = cd.match(/filename\*=UTF-8''(.+?)($|;)/);
-          const m2 = cd.match(/filename="?([^";]+)"?/);
-          if (m1) filename = decodeURIComponent(m1[1]);
-          else if (m2) filename = m2[1];
-          else {
-            const ext = (contentType.split('/').pop() || 'mp4').split(';')[0];
-            filename = `video.${ext}`;
+        // Segurança: prevenir múltiplos cliques também por tecla Enter (por precaução)
+        urlInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            form.dispatchEvent(new Event('submit', { cancelable: true }));
           }
-
-          // criar link para download
-          const blobUrl = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = blobUrl;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(blobUrl);
-
-          responseDiv.textContent = `Download concluído: ${filename}`;
-          showToast('Download concluído.');
-        } catch (err) {
-          console.error(err);
-          if (err.name === 'AbortError') {
-            responseDiv.textContent = 'Tempo de download esgotado.';
-            showToast('Tempo de download esgotado.');
-          } else {
-            responseDiv.textContent = `Erro: ${err.message || err}`;
-            showToast('Erro ao iniciar download.');
-          }
-        } finally {
-          // limpa input e reabilita botão após pequena espera para evitar cliques acidentais
-          urlInput.value = '';
-          setTimeout(() => setDownloadingState(false), 700);
-        }
-      });
-
-      // Segurança: prevenir múltiplos cliques também por tecla Enter (por precaução)
-      urlInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          e.preventDefault();
-          form.dispatchEvent(new Event('submit', { cancelable: true }));
-        }
-      });
-    })();
+        });
+      })();
   </script>
 
   <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>

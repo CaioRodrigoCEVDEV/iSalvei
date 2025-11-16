@@ -595,3 +595,7 @@ section,
 .download-btn.downloading .btn-text::after {
   content: ' ⏳'; /* ou inserir um spinner via background-image */
 }
+
+#btnColar, #baixar{
+  margin: 10px;
+}
