@@ -1,7 +1,7 @@
 # iSalvei
 
-**iSalvei** é uma aplicação web que permite o download de vídeos curtos de diversas plataformas de redes sociais.  
-Com uma interface simples e intuitiva, o usuário pode inserir o link do vídeo desejado e realizar o download diretamente pelo navegador.
+**iSalvei** é uma aplicação web que permite o download de vídeos públicos de diversas plataformas compatíveis com `yt-dlp`.
+Com interface moderna, rate limit por IP e proteção contra URLs internas, o usuário cola o link desejado e realiza o download diretamente pelo navegador.
 
 ## 🚀 Demonstração
 
@@ -9,16 +9,18 @@ Para utilizar o iSalvei, basta acessar o arquivo `index.html` presente no reposi
 
 ## 🧠 Funcionalidades
 
-- Download de vídeos curtos de plataformas como Facebook, Instagram, YouTube, entre outras.  
-- Interface amigável e de fácil utilização.  
-- Compatibilidade com os principais navegadores.  
+- Download de vídeos públicos de X/Twitter, Instagram, YouTube e outras fontes suportadas pelo `yt-dlp`.
+- Rate limit configurável por IP (`RATE_LIMIT_MAX` e `RATE_LIMIT_WINDOW_MS`).
+- Interface moderna com páginas de início, download e plataformas.
+- Proteção contra protocolos não HTTP(S), localhost e faixas privadas de IP.
 
 ## 🛠️ Tecnologias Utilizadas
 
-- HTML  
-- CSS  
-- JavaScript  
-- Python (para funcionalidades específicas)  
+- HTML
+- CSS
+- JavaScript
+- Node.js / Express
+- yt-dlp e ffmpeg no servidor
 
 ## 📦 Instalação
 
@@ -45,7 +47,7 @@ Para utilizar o iSalvei, basta acessar o arquivo `index.html` presente no reposi
 
 ## 📫 Contato
 
-Desenvolvedor: [Caio Rodrigo](https://github.com/CaioRodrigoCEVDEV)  
+Desenvolvedor: [Caio Rodrigo](https://github.com/CaioRodrigoCEVDEV)
 E-mail: [contato@caiorodrigocev.com.br](mailto:contato@caiorodrigocev.com.br)
 
 ---

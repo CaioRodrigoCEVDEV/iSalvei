@@ -14,13 +14,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const API_PORT = process.env.API_PORT || process.env.PORT || 3000;
 const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 10);
+const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60 * 1000);
 const YTDLP_TIMEOUT = Number(process.env.YTDLP_TIMEOUT || 120000); // timeout por tentativa (ms)
 const YTDLP_MAX_ATTEMPTS = Number(process.env.YTDLP_MAX_ATTEMPTS || 5);
 const YTDLP_INITIAL_BACKOFF = Number(process.env.YTDLP_INITIAL_BACKOFF || 2000); // ms
 const TMP_DIR = process.env.TMP_DIR || undefined;
 const COOKIES_FILE = process.env.COOKIES_FILE || '';
 const YTDLP_PATH = process.env.YTDLP_PATH || 'yt-dlp'; // use '/usr/local/bin/yt-dlp' no servidor se precisar
-const ALLOWED_HOSTS = ['instagram.com', 'x.com', 'twitter.com'];
+const BLOCKED_HOSTS = (process.env.BLOCKED_HOSTS || '').split(',').map(h => h.trim().toLowerCase()).filter(Boolean);
 
 // ==============================
 // Serve static frontend/assets FIRST (very important)
@@ -37,22 +38,51 @@ app.set('trust proxy', 1);
 // Rate limiter: apply ONLY to API / download routes
 // ==============================
 const apiLimiter = rateLimit({
-  windowMs: 60 * 1000,
+  windowMs: RATE_LIMIT_WINDOW_MS,
   max: RATE_LIMIT_MAX,
   standardHeaders: true,
   legacyHeaders: false,
-  message: 'Too many requests, please try again later.'
+  message: { error: 'Rate limit exceeded. Tente novamente em alguns instantes.' }
 });
 
 // ==============================
 // Helper: validate URLs
 // ==============================
+function isPrivateHost(hostname) {
+  const host = hostname.toLowerCase();
+  if (host === 'localhost' || host.endsWith('.localhost')) return true;
+  if (BLOCKED_HOSTS.some(blocked => host === blocked || host.endsWith(`.${blocked}`))) return true;
+
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
+    const parts = host.split('.').map(Number);
+    if (parts.some(part => part < 0 || part > 255)) return true;
+    const [a, b] = parts;
+    return a === 10 || a === 127 || a === 0 ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168);
+  }
+
+  if (host === '::1' || host.startsWith('fc') || host.startsWith('fd') || host.startsWith('fe80')) return true;
+  return false;
+}
+
 function isAllowedUrl(u) {
   try {
-    const host = new URL(u).hostname.toLowerCase();
-    return ALLOWED_HOSTS.some(h => host.includes(h));
+    const parsed = new URL(u);
+    return ['http:', 'https:'].includes(parsed.protocol) && !isPrivateHost(parsed.hostname);
   } catch (e) {
     return false;
+  }
+}
+
+function mapFormatToYtDlp(format) {
+  switch (String(format || 'best')) {
+    case '720': return 'bestvideo[height<=720]+bestaudio/best[height<=720]/best';
+    case '480': return 'bestvideo[height<=480]+bestaudio/best[height<=480]/best';
+    case 'audio': return 'bestaudio/best';
+    case 'best':
+    default: return 'bestvideo+bestaudio/best';
   }
 }
 
@@ -69,7 +99,7 @@ async function downloadToTemp(url, formatArg) {
   const baseArgs = [
     url,
     '--no-playlist',
-    '-f', formatArg || 'bestvideo+bestaudio/best',
+    '-f', mapFormatToYtDlp(formatArg),
     '-o', outTemplate,
     '--restrict-filenames',
     '--no-warnings',
@@ -77,7 +107,8 @@ async function downloadToTemp(url, formatArg) {
     '--retries', '10',
     '--fragment-retries', '10',
     '--sleep-requests', '2',
-    '--sleep-interval', '3'
+    '--sleep-interval', '3',
+    '--max-sleep-interval', '8'
   ];
 
   if (COOKIES_FILE) {
@@ -221,9 +252,10 @@ app.get('/health', (req, res) => res.json({ ok: true }));
 // API info
 app.get('/api', (req, res) => {
   res.json({
-    message: 'Downloader API (v1)',
+    message: 'Downloader API (v2)',
     endpoints: {
-      download: '/api/download?url=... (GET, requires rate-limiter)'
+      download: '/api/download?url=...&format=best|720|480|audio (GET, rate limited)',
+      supportedUrls: 'URLs públicas HTTP(S) compatíveis com yt-dlp'
     }
   });
 });
@@ -233,7 +265,7 @@ app.get('/download', apiLimiter, async (req, res) => {
   const url = req.query.url;
   const format = req.query.format; // optional
   if (!url) return res.status(400).json({ error: 'query param "url" required' });
-  if (!isAllowedUrl(url)) return res.status(400).json({ error: 'URL not allowed' });
+  if (!isAllowedUrl(url)) return res.status(400).json({ error: 'URL inválida ou bloqueada. Use uma URL pública HTTP(S).' });
 
   try {
     const { filePath, cleanup } = await downloadToTemp(url, format);
@@ -254,7 +286,7 @@ app.get('/api/download', apiLimiter, async (req, res) => {
   const url = req.query.url;
   const format = req.query.format;
   if (!url) return res.status(400).json({ error: 'url param required' });
-  if (!isAllowedUrl(url)) return res.status(400).json({ error: 'URL not allowed' });
+  if (!isAllowedUrl(url)) return res.status(400).json({ error: 'URL inválida ou bloqueada. Use uma URL pública HTTP(S).' });
 
   try {
     const { filePath, cleanup } = await downloadToTemp(url, format);
@@ -272,10 +304,8 @@ app.get('/api/download', apiLimiter, async (req, res) => {
 
 // Serve index.html for root if exists
 app.get('/', (req, res) => {
-  const idx = path.join(__dirname, 'frontend', 'insta.html');
+  const idx = path.join(__dirname, 'frontend', 'index.html');
   if (fs.existsSync(idx)) return res.sendFile(idx);
-  const idx2 = path.join(__dirname, 'frontend', 'index.html');
-  if (fs.existsSync(idx2)) return res.sendFile(idx2);
   res.status(404).send('Not found');
 });
 
