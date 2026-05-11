@@ -1,371 +1,73 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
   <meta charset="utf-8">
-  <meta content="width=device-width, initial-scale=1.0" name="viewport">
-  <title>iSalvei</title>
-  <meta name="description" content="Baixe e salve seus vídeos!">
-  <meta name="keywords" content="">
-
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plataformas — iSalvei</title>
+  <meta name="description" content="Veja as plataformas e sites suportados pelo downloader iSalvei.">
+  <meta name="theme-color" content="#07111f">
   <link href="assets/img/favicon.png" rel="icon">
-  <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
-
-  <link href="https://fonts.googleapis.com" rel="preconnect">
-  <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto&family=Poppins&display=swap" rel="stylesheet">
-
-  <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-  <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
-  <link href="assets/vendor/aos/aos.css" rel="stylesheet">
-  <link href="assets/vendor/fontawesome-free/css/all.min.css" rel="stylesheet">
-  <link href="assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
-  <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <link href="assets/css/style.css" rel="stylesheet">
-
-  <style>
-    /* Loading modal (overlay) */
-    #loadingModal {
-      display: none;
-      /* oculto por padrão */
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.6);
-      z-index: 9998;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      font-size: 1.1rem;
-      text-align: center;
-    }
-
-    #loadingModal .box {
-      background: #111;
-      padding: 20px 24px;
-      border-radius: 8px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-    }
-
-    /* Toast */
-    #download-toast {
-      display: none;
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      z-index: 9999;
-      padding: 10px 14px;
-      background: #111;
-      color: #fff;
-      border-radius: 8px;
-      max-width: 320px;
-      word-break: break-word;
-    }
-
-    /* botão estado */
-    .download-btn.downloading {
-      opacity: 0.85;
-      cursor: wait;
-    }
-
-    .download-btn .spinner {
-      margin-left: 8px;
-    }
-
-    /* feedback textual */
-    #response {
-      margin-top: 10px;
-      color: #fff;
-    }
-  </style>
 </head>
-
-<body class="index-page">
-  <header id="header" class="header d-flex align-items-center fixed-top">
-    <div class="container-fluid container-xl position-relative d-flex align-items-center">
-      <a href="index.html" class="logo d-flex align-items-center me-auto">
-        <h1 class="sitename">iSalvei</h1>
-      </a>
-      <nav id="navmenu" class="navmenu">
-        <ul>
-          <li><a href="index.html">Início<br></a></li>
-          <li><a href="x.html">X</a></li>
-        </ul>
-        <i class="mobile-nav-toggle d-xl-none bi bi-list"></i>
+<body>
+  <header class="header">
+    <div class="container navbar">
+      <a class="logo" href="index.html"><span class="logo-mark">▶</span> iSalvei</a>
+      <nav class="nav-links" aria-label="Navegação principal">
+        <a href="index.html">Início</a>
+        <a href="download.html">Baixar</a>
+        <a class="active" href="x.html">Plataformas</a>
       </nav>
     </div>
   </header>
 
-  <main class="main" style="padding-top:90px;">
-    <!-- Loading overlay -->
-    <div id="loadingModal" aria-hidden="true">
-      <div class="box">
-        <div>Por favor, aguarde. Estamos preparando o vídeo para download...</div>
-      </div>
-    </div>
-
-    <section id="hero" class="hero section dark-background">
+  <main>
+    <section class="hero">
       <div class="container">
-        <div class="row gy-4 d-flex justify-content-between">
-          <div class="col-lg-6 order-2 order-lg-1 d-flex flex-column justify-content-center">
-            <h2 data-aos="fade-up">Baixar Vídeo do X</h2>
-            <p data-aos="fade-up" data-aos-delay="100">O iSalvei foi criado para permitir que você baixe vídeos X/IG.
-            </p>
-
-            <form id="videoForm" action="#" class="form-search d-flex align-items-stretch mb-3" data-aos="fade-up"
-              data-aos-delay="200">
-              <input type="text" id="yt_dlp" class="form-control" placeholder="insira o link X"
-                aria-label="Link do vídeo">
-              <button id="btnColar" type="button" class="btn btn-primary">
-                <span class="btn-text">Colar</span>
-              </button>
-              <button id="baixar" type="submit" class="btn btn-primary download-btn" aria-disabled="false">
-                <span class="btn-text">Baixar</span>
-                <span class="spinner" style="display:none;">⏳</span>
-              </button>
-            </form>
-
-            <!-- mensagens para o usuário -->
-            <div id="download-toast" role="status" aria-live="polite"></div>
-            <div id="response" aria-live="polite"></div>
-          </div>
-
-          <div class="col-lg-5 order-1 order-lg-2 hero-img" data-aos="zoom-out">
-            <img src="assets/img/LogoX.png" class="img-fluid mb-3 mb-lg-0" alt="Logo X">
-          </div>
-        </div>
-
-        <section class="tutorial">
-          <iframe id="downloadFrame" width="3" height="6" title="teste" style="display: none;"></iframe>
-          <div class="container">
-            <div class="separator" data-aos="fade-up"></div>
-          </div>
-          <br>
-          <h3 id="tutorial" data-aos="fade-up">Como baixar do X?</h3>
-          <ol data-aos="fade-up">
-            <li><strong>Copie a URL</strong></li>
-            Abra o aplicativo ou site do X, vá até o vídeo que deseja baixar e copie a URL.<br><br>
-            <li><strong>Cole o link</strong></li>
-            Cole o link no campo e clique em "Baixar".<br><br>
-            <li><strong>Baixar</strong></li>
-            Uma nova aba será aberta (ou o download será iniciado) — aguarde.
-          </ol>
-        </section>
-
-        <section id="contato">
-          <div class="container">
-            <div class="separator" data-aos="fade-up" style="margin-top: 50px;"></div>
-          </div>
-          <p class="contato" data-aos="fade-up" data-aos-delay="100" style="margin-top: 20px ;">
-            Nosso objetivo é oferecer uma plataforma rápida e confiável para download dos seus conteúdos favoritos.
-            Para falar conosco, envie um e-mail para contato@isalvei.com.br.
-          </p>
-        </section>
+        <p class="eyebrow">🌐 Além de X, Instagram e YouTube</p>
+        <h1>Um downloader para várias fontes públicas.</h1>
+        <p class="lead">A validação deixou de depender de uma lista curta de domínios. Agora o backend aceita URLs HTTP(S) públicas e deixa o yt-dlp resolver o extrator correto, mantendo bloqueios para localhost, IPs privados e protocolos inseguros.</p>
+        <div class="actions"><a class="btn btn-primary" href="download.html">Baixar vídeo</a><a class="btn" href="/api">Ver API</a></div>
       </div>
     </section>
 
-    <a href="#" id="scroll-top" class="scroll-top">Topo</a>
-    <div id="preloader"></div>
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Categorias</p>
+            <h2>Páginas correspondentes</h2>
+            <p>As páginas foram reorganizadas para serem objetivas: início, download e plataformas.</p>
+          </div>
+        </div>
+        <div class="platform-grid">
+          <article class="platform-card"><div class="icon">𝕏</div><h3>X / Twitter</h3><p>Posts públicos com mídia compatível.</p></article>
+          <article class="platform-card"><div class="icon">◎</div><h3>Instagram</h3><p>Reels, posts e vídeos públicos quando a plataforma permitir.</p></article>
+          <article class="platform-card"><div class="icon">▶</div><h3>YouTube</h3><p>Vídeos e áudio em formatos selecionáveis.</p></article>
+          <article class="platform-card"><div class="icon">＋</div><h3>Outros sites</h3><p>Qualquer URL pública HTTP(S) suportada pelo yt-dlp.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container hero-grid">
+        <div class="panel">
+          <h2>Proteções do backend</h2>
+          <p>O servidor aplica rate limit por IP, timeout por tentativa, backoff exponencial, retries para erros temporários e mensagens claras para conteúdo privado ou autenticação necessária.</p>
+        </div>
+        <div class="panel">
+          <h2>Política de uso</h2>
+          <p>Baixe apenas conteúdos autorizados. O iSalvei não contorna paywalls, login obrigatório, contas privadas ou regras de direitos autorais das plataformas.</p>
+        </div>
+      </div>
+    </section>
   </main>
 
-  <footer class="footer" id="ft">Copyright © 2024 isalvei.com.br</footer>
-
-  <script>
-    const input = document.getElementById("yt_dlp");
-    const botao = document.getElementById("btnColar");
-
-    botao.addEventListener('click', async () => {
-      try {
-        if (input.value === '') {
-          const texto = await navigator.clipboard.readText();
-          input.value = texto;
-          botao.textContent = 'Limpar';
-
-        } else {
-          input.value = '';
-          botao.textContent = 'Colar';
-        }
-
-      }
-      catch (error) {
-        alert("erro ao colar" + error);
-      }
-    })
-
-  </script>
-
-  <!-- Scripts: 1 único bloco JS que faz tudo -->
-  <script>
-      (function () {
-        const form = document.getElementById('videoForm');
-        const urlInput = document.getElementById('yt_dlp');
-        const loadingModal = document.getElementById('loadingModal');
-        const baixarBtn = document.getElementById('baixar');
-        const toast = document.getElementById('download-toast');
-        const responseDiv = document.getElementById('response');
-        const spinner = baixarBtn.querySelector('.spinner');
-        const btnText = baixarBtn.querySelector('.btn-text');
-
-        function showToast(msg, timeout = 3500) {
-          if (!toast) return;
-          toast.textContent = msg;
-          toast.style.display = 'block';
-          clearTimeout(toast._t);
-          toast._t = setTimeout(() => { toast.style.display = 'none'; }, timeout);
-        }
-
-        function setDownloadingState(isDownloading) {
-          if (isDownloading) {
-            baixarBtn.dataset.downloading = 'true';
-            baixarBtn.setAttribute('aria-disabled', 'true');
-            baixarBtn.disabled = true;
-            baixarBtn.classList.add('downloading');
-            if (spinner) spinner.style.display = 'inline';
-            if (loadingModal) loadingModal.style.display = 'flex';
-          } else {
-            baixarBtn.dataset.downloading = 'false';
-            baixarBtn.setAttribute('aria-disabled', 'false');
-            baixarBtn.disabled = false;
-            baixarBtn.classList.remove('downloading');
-            if (btnText) btnText.textContent = 'Baixar';
-            if (spinner) spinner.style.display = 'none';
-            if (loadingModal) loadingModal.style.display = 'none';
-          }
-        }
-
-        // Timeout helper
-        function fetchWithTimeout(resource, options = {}) {
-          const { timeout = 120000 } = options;
-          const controller = new AbortController();
-          const id = setTimeout(() => controller.abort(), timeout);
-          return fetch(resource, { ...options, signal: controller.signal })
-            .finally(() => clearTimeout(id));
-        }
-
-        form.addEventListener('submit', async (event) => {
-          event.preventDefault();
-          responseDiv.textContent = '';
-          const url = urlInput.value && urlInput.value.trim();
-
-          if (!url) {
-            responseDiv.textContent = 'Cole a URL antes de baixar.';
-            return;
-          }
-
-          // evita double-click
-          if (baixarBtn.dataset.downloading === 'true') {
-            showToast('Download já em andamento.');
-            return;
-          }
-
-          setDownloadingState(true);
-          showToast('Iniciando download...');
-
-          try {
-            const BASE_API = window.location.origin; // ajusta se necessário
-            const endpoint = `${BASE_API}/download?url=${encodeURIComponent(url)}`;
-
-            const headers = {};
-            // opcional: usar API key do localStorage
-            const apiKey = localStorage.getItem('apiKey');
-            if (apiKey) headers['X-API-KEY'] = apiKey;
-
-            const resp = await fetchWithTimeout(endpoint, {
-              method: 'GET',
-              headers,
-              timeout: 120000
-            });
-
-            if (!resp.ok) {
-              // tenta extrair mensagem do corpo JSON/Texto
-              let msg = `Erro ${resp.status}`;
-              try {
-                const j = await resp.json();
-                msg = j.error || j.message || msg;
-              } catch (_) {
-                try { const t = await resp.text(); if (t) msg += ' - ' + t; } catch (_) { }
-              }
-              responseDiv.textContent = msg;
-              showToast('Erro ao preparar download.');
-              return;
-            }
-
-            // Se for JSON de erro/aviso
-            const contentType = resp.headers.get('content-type') || '';
-            if (contentType.includes('application/json')) {
-              const j = await resp.json();
-              // Se o backend retornar um downloadUrl (link temporário), usamos ele
-              if (j.downloadUrl) {
-                // abrir em nova aba para que o navegador faça o download (mais confiável)
-                window.open(j.downloadUrl, '_blank');
-                responseDiv.textContent = 'Download iniciado.';
-                showToast('Download iniciado.');
-                return;
-              } else {
-                responseDiv.textContent = j.error || JSON.stringify(j);
-                return;
-              }
-            }
-
-            // se veio blob (stream do vídeo)
-            const blob = await resp.blob();
-
-            // tenta extrair filename do header Content-Disposition
-            const cd = resp.headers.get('Content-Disposition') || '';
-            let filename = 'video';
-            const m1 = cd.match(/filename\*=UTF-8''(.+?)($|;)/);
-            const m2 = cd.match(/filename="?([^";]+)"?/);
-            if (m1) filename = decodeURIComponent(m1[1]);
-            else if (m2) filename = m2[1];
-            else {
-              const ext = (contentType.split('/').pop() || 'mp4').split(';')[0];
-              filename = `video.${ext}`;
-            }
-
-            // criar link para download
-            const blobUrl = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = blobUrl;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(blobUrl);
-            
-            botao.textContent = 'Colar';
-            responseDiv.textContent = `Download concluído: ${filename}`;
-            showToast('Download concluído.');
-          } catch (err) {
-            console.error(err);
-            if (err.name === 'AbortError') {
-              responseDiv.textContent = 'Tempo de download esgotado.';
-              showToast('Tempo de download esgotado.');
-            } else {
-              responseDiv.textContent = `Erro: ${err.message || err}`;
-              showToast('Erro ao iniciar download.');
-            }
-          } finally {
-            // limpa input e reabilita botão após pequena espera para evitar cliques acidentais
-            urlInput.value = '';
-            setTimeout(() => setDownloadingState(false), 700);
-          }
-        });
-
-        // Segurança: prevenir múltiplos cliques também por tecla Enter (por precaução)
-        urlInput.addEventListener('keydown', (e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            form.dispatchEvent(new Event('submit', { cancelable: true }));
-          }
-        });
-      })();
-  </script>
-
-  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-  <script src="assets/vendor/aos/aos.js"></script>
-  <script src="assets/vendor/purecounter/purecounter_vanilla.js"></script>
-  <script src="assets/vendor/glightbox/js/glightbox.min.js"></script>
-  <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
-  <script src="assets/js/main.js"></script>
+  <footer class="footer">
+    <div class="container footer-inner"><span>© 2026 iSalvei</span><span>Contato: contato@isalvei.com.br</span></div>
+  </footer>
 </body>
-
 </html>

@@ -1,57 +1,96 @@
+(function () {
+  const form = document.querySelector('[data-download-form]');
+  if (!form) return;
 
-/* Integration script added by assistant.
-   It attempts to wire input with id or name containing 'url' and buttons containing 'download'/'salvar' text.
-   If your HTML uses different IDs, please tell me and I will adapt exactly.
-*/
-(function(){
-  function qs(sel){return document.querySelector(sel);}
-  // find input that likely contains the URL
-  var urlInput = qs('input[type="text"][placeholder], input[name*="url"], input[id*="url"]') || qs('input');
-  var downloadBtn = Array.from(document.querySelectorAll('button,input[type="button"],input[type="submit"]'))
-    .find(el=>/(baixar|salvar|download|downloadar|save)/i.test(el.textContent || el.value || ""));
-  var previewBtn = null;
-  if(!downloadBtn) downloadBtn = qs('button') || null;
+  const urlInput = form.querySelector('[name="url"]');
+  const formatInput = form.querySelector('[name="format"]');
+  const pasteButton = form.querySelector('[data-paste]');
+  const submitButton = form.querySelector('[type="submit"]');
+  const message = document.querySelector('[data-message]');
 
-  function getApiKey(){
-    return localStorage.getItem('apiKey') || '';
+  function setMessage(text, type) {
+    if (!message) return;
+    message.textContent = text || '';
+    message.classList.remove('error', 'success');
+    if (type) message.classList.add(type);
   }
 
-  function setMsg(msg, err){
-    var el = qs('#msg') || qs('.msg') || null;
-    if(el){ el.textContent = msg; el.style.color = err?'#b91c1c':'#111'; }
-    else console.log(msg);
+  function filenameFromDisposition(disposition, contentType) {
+    const utf = disposition && disposition.match(/filename\*=UTF-8''([^;]+)/i);
+    const ascii = disposition && disposition.match(/filename="?([^";]+)"?/i);
+    if (utf) return decodeURIComponent(utf[1]);
+    if (ascii) return ascii[1];
+    const ext = (contentType || 'video/mp4').split('/').pop().split(';')[0] || 'mp4';
+    return `isalvei-video.${ext}`;
   }
 
-  async function download(url){
-    if(!url) return setMsg('Cole a URL antes de baixar', true);
-    setMsg('Processando...');
-    try{
-      var headers = {};
-      var key = getApiKey();
-      if(key) headers['X-API-KEY'] = key;
-      var resp = await fetch('/api/download?url='+encodeURIComponent(url), { headers: headers });
-      if(!resp.ok){
-        var j = await resp.json().catch(()=>null);
-        setMsg('Erro: '+(j?.error||resp.statusText), true);
-        return;
+  function setLoading(isLoading) {
+    submitButton.disabled = isLoading;
+    submitButton.textContent = isLoading ? 'Preparando...' : 'Baixar agora';
+  }
+
+  async function pasteFromClipboard() {
+    if (urlInput.value) {
+      urlInput.value = '';
+      pasteButton.textContent = 'Colar link';
+      urlInput.focus();
+      return;
+    }
+
+    try {
+      urlInput.value = await navigator.clipboard.readText();
+      pasteButton.textContent = 'Limpar';
+      setMessage('Link colado. Confira a URL e clique em baixar.');
+    } catch (error) {
+      setMessage('Não foi possível acessar a área de transferência. Cole manualmente.', 'error');
+    }
+  }
+
+  async function downloadVideo(event) {
+    event.preventDefault();
+    const videoUrl = urlInput.value.trim();
+    const format = formatInput ? formatInput.value : 'best';
+
+    if (!videoUrl) {
+      setMessage('Cole uma URL pública antes de baixar.', 'error');
+      urlInput.focus();
+      return;
+    }
+
+    setLoading(true);
+    setMessage('Validando link e preparando o arquivo. Isso pode levar alguns instantes...');
+
+    try {
+      const params = new URLSearchParams({ url: videoUrl, format });
+      const response = await fetch(`/api/download?${params.toString()}`);
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        const retryAfter = response.headers.get('Retry-After');
+        const suffix = retryAfter ? ` Tente novamente em ${retryAfter}s.` : '';
+        throw new Error(`${body.error || body.details || response.statusText}.${suffix}`);
       }
-      var blob = await resp.blob();
-      var cd = resp.headers.get('Content-Disposition')||'';
-      var m = cd.match(/filename="(.+?)"/);
-      var filename = m?m[1]:'video.mp4';
-      var a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = filename;
-      document.body.appendChild(a); a.click(); a.remove();
-      setMsg('Download concluído: '+filename);
-    }catch(e){ console.error(e); setMsg('Erro: '+e.message, true); }
+
+      const blob = await response.blob();
+      const filename = filenameFromDisposition(response.headers.get('Content-Disposition'), response.headers.get('Content-Type'));
+      const blobUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = blobUrl;
+      anchor.download = filename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(blobUrl);
+      setMessage(`Download iniciado: ${filename}`, 'success');
+      urlInput.value = '';
+      if (pasteButton) pasteButton.textContent = 'Colar link';
+    } catch (error) {
+      setMessage(`Erro: ${error.message}`, 'error');
+    } finally {
+      setLoading(false);
+    }
   }
 
-  if(downloadBtn && urlInput){
-    downloadBtn.addEventListener('click', function(e){
-      e.preventDefault();
-      download(urlInput.value.trim());
-    });
-  }
-
+  if (pasteButton) pasteButton.addEventListener('click', pasteFromClipboard);
+  form.addEventListener('submit', downloadVideo);
 })();

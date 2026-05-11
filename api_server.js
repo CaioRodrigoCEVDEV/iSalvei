@@ -13,6 +13,8 @@ const PORT = process.env.API_PORT || process.env.PORT || 3000;
 const YTDLP_TIMEOUT = Number(process.env.YTDLP_TIMEOUT || 120000);
 const TMP_DIR = process.env.TMP_DIR || undefined;
 const COOKIES_FILE = process.env.COOKIES_FILE || '';
+const YTDLP_PATH = process.env.YTDLP_PATH || 'yt-dlp';
+const BLOCKED_HOSTS = (process.env.BLOCKED_HOSTS || '').split(',').map(h => h.trim().toLowerCase()).filter(Boolean);
 
 const app = express();
 app.use(express.json());
@@ -40,9 +42,9 @@ db.exec(`
 function mapFormatToYtDlp(format){
   // friendly format names to yt-dlp format selectors
   switch(String(format)){
-    case '720': return 'bestvideo[height<=720]+bestaudio/best[height<=720]';
-    case '480': return 'bestvideo[height<=480]+bestaudio/best[height<=480]';
-    case 'audio': return 'bestaudio';
+    case '720': return 'bestvideo[height<=720]+bestaudio/best[height<=720]/best';
+    case '480': return 'bestvideo[height<=480]+bestaudio/best[height<=480]/best';
+    case 'audio': return 'bestaudio/best';
     default: return 'bestvideo+bestaudio/best';
   }
 }
@@ -70,10 +72,27 @@ function checkRateLimit(key){
   return true;
 }
 
+function isPrivateHost(hostname) {
+  const host = hostname.toLowerCase();
+  if (host === 'localhost' || host.endsWith('.localhost')) return true;
+  if (BLOCKED_HOSTS.some(blocked => host === blocked || host.endsWith(`.${blocked}`))) return true;
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
+    const parts = host.split('.').map(Number);
+    if (parts.some(part => part < 0 || part > 255)) return true;
+    const [a, b] = parts;
+    return a === 10 || a === 127 || a === 0 ||
+      (a === 169 && b === 254) ||
+      (a === 172 && b >= 16 && b <= 31) ||
+      (a === 192 && b === 168);
+  }
+  if (host === '::1' || host.startsWith('fc') || host.startsWith('fd') || host.startsWith('fe80')) return true;
+  return false;
+}
+
 function isAllowedUrl(u){
   try {
-    const host = new URL(u).hostname.toLowerCase();
-    return host.includes('instagram.com') || host.includes('x.com') || host.includes('twitter.com');
+    const parsed = new URL(u);
+    return ['http:', 'https:'].includes(parsed.protocol) && !isPrivateHost(parsed.hostname);
   } catch(e){
     return false;
   }
@@ -93,12 +112,17 @@ async function downloadToTemp(url, format){
     '-o', outTemplate,
     '--restrict-filenames',
     '--no-warnings',
-    '--no-call-home'
+    '--no-progress',
+    '--retries', '10',
+    '--fragment-retries', '10',
+    '--sleep-requests', '2',
+    '--sleep-interval', '3',
+    '--max-sleep-interval', '8'
   ];
   if (COOKIES_FILE) args.push('--cookies', COOKIES_FILE);
 
   return new Promise((resolve, reject) => {
-    const child = spawn('yt-dlp', args);
+    const child = spawn(YTDLP_PATH, args);
     let stderr = '';
     child.stderr.on('data', d => stderr += d.toString());
     child.on('error', err => reject(new Error('Failed to start yt-dlp: ' + err.message)));
@@ -137,7 +161,7 @@ app.get('/api/download', requireApiKey, async (req, res) => {
   const url = req.query.url;
   const format = req.query.format;
   if(!url) return res.status(400).json({ error: 'url param required' });
-  if(!isAllowedUrl(url)) return res.status(400).json({ error: 'URL not allowed' });
+  if(!isAllowedUrl(url)) return res.status(400).json({ error: 'URL inválida ou bloqueada. Use uma URL pública HTTP(S).' });
 
   try {
     const { filePath, cleanup } = await downloadToTemp(url, format);
