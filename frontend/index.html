@@ -12,16 +12,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <link href="assets/css/style.css" rel="stylesheet">
+  <link href="assets/css/style.css?v=2.0.0" rel="stylesheet">
 </head>
 <body>
   <header class="header">
     <div class="container navbar">
       <a class="logo" href="index.html" aria-label="iSalvei início"><span class="logo-mark">▶</span> iSalvei</a>
       <nav class="nav-links" aria-label="Navegação principal">
-        <a class="active" href="index.html">Início</a>
-        <a href="download.html">Baixar</a>
-        <a href="x.html">Plataformas</a>
+        <a class="active" href="index.html?v=2.0.0">Início</a>
+        <a href="download.html?v=2.0.0">Baixar</a>
+        <a href="x.html?v=2.0.0">Plataformas</a>
       </nav>
     </div>
   </header>
@@ -34,8 +34,8 @@
           <h1>Salve vídeos públicos sem complicação.</h1>
           <p class="lead">O iSalvei foi refatorado para aceitar links públicos de muitas plataformas suportadas pelo yt-dlp — não apenas X, Instagram e YouTube — mantendo limites por IP para proteger o serviço.</p>
           <div class="actions">
-            <a class="btn btn-primary" href="download.html">Começar agora</a>
-            <a class="btn" href="x.html">Ver plataformas</a>
+            <a class="btn btn-primary" href="download.html?v=2.0.0">Começar agora</a>
+            <a class="btn" href="x.html?v=2.0.0">Ver plataformas</a>
           </div>
           <div class="stats" aria-label="Destaques">
             <div class="stat"><strong>10/min</strong><p>Limite padrão por IP, ajustável por variável de ambiente.</p></div>
@@ -97,7 +97,7 @@
     </div>
   </footer>
 
-  <script src="script.js"></script>
+  <script src="script.js?v=2.0.0"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(console.error);
