@@ -22,6 +22,8 @@ const TMP_DIR = process.env.TMP_DIR || undefined;
 const COOKIES_FILE = process.env.COOKIES_FILE || '';
 const YTDLP_PATH = process.env.YTDLP_PATH || 'yt-dlp'; // use '/usr/local/bin/yt-dlp' no servidor se precisar
 const BLOCKED_HOSTS = (process.env.BLOCKED_HOSTS || '').split(',').map(h => h.trim().toLowerCase()).filter(Boolean);
+const MAX_VIDEO_DURATION = Number(process.env.MAX_VIDEO_DURATION || 600); // segundos (padrão: 10 min)
+const MAX_FILE_SIZE = Number(process.env.MAX_FILE_SIZE || 100 * 1024 * 1024); // bytes (padrão: 100MB)
 
 // ==============================
 // Serve static frontend/assets FIRST (very important)
@@ -104,13 +106,88 @@ function mapFormatToYtDlp(format, url) {
 }
 
 // ==============================
+// Video metadata extraction
+// ==============================
+async function getVideoMetadata(url, formatArg) {
+  const args = [
+    url,
+    '--dump-json',
+    '--no-playlist',
+    '-f', mapFormatToYtDlp(formatArg, url),
+    '--no-warnings',
+  ];
+
+  if (COOKIES_FILE) {
+    args.push('--cookies', COOKIES_FILE);
+  }
+
+  if (/instagram\.com/i.test(url)) {
+    args.push('--add-header', 'User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36');
+  }
+
+  if (/youtube\.com/i.test(url)) {
+    args.push('--extractor-args', 'youtube:player-client=web,android');
+  }
+
+  return new Promise((resolve, reject) => {
+    let stdout = '';
+    let stderr = '';
+    const child = spawn(YTDLP_PATH, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    child.stdout.on('data', d => { stdout += d.toString(); });
+    child.stderr.on('data', d => { stderr += d.toString(); });
+    child.on('error', err => reject(new Error('Failed to start yt-dlp: ' + err.message)));
+    child.on('close', code => {
+      if (code !== 0) {
+        reject(new Error('Falha ao obter metadados do vídeo. ' + stderr.slice(0, 300)));
+        return;
+      }
+      try {
+        const firstLine = stdout.split('\n')[0];
+        const metadata = JSON.parse(firstLine);
+        resolve(metadata);
+      } catch (err) {
+        reject(new Error('Failed to parse metadata JSON: ' + err.message));
+      }
+    });
+    setTimeout(() => { try { child.kill('SIGKILL'); } catch (e) {} }, YTDLP_TIMEOUT);
+  });
+}
+
+// ==============================
+// Video validation
+// ==============================
+function validateVideo(metadata) {
+  const duration = metadata.duration;
+  if (duration && duration > MAX_VIDEO_DURATION) {
+    const minutes = Math.floor(MAX_VIDEO_DURATION / 60);
+    throw new Error(`Vídeo muito longo. Limite máximo: ${minutes} minutos.`);
+  }
+
+  let fileSize = metadata.filesize || metadata.filesize_approx;
+
+  if (!fileSize && metadata.requested_formats) {
+    fileSize = metadata.requested_formats.reduce((sum, f) => sum + (f.filesize || f.filesize_approx || 0), 0);
+  }
+
+  if (!fileSize && metadata.formats && metadata.formats.length > 0) {
+    const last = metadata.formats[metadata.formats.length - 1];
+    fileSize = last.filesize || last.filesize_approx;
+  }
+
+  if (fileSize && fileSize > MAX_FILE_SIZE) {
+    const sizeMB = Math.round(MAX_FILE_SIZE / (1024 * 1024));
+    throw new Error(`Arquivo muito grande para download. Limite máximo: ${sizeMB}MB.`);
+  }
+}
+
+// ==============================
 // Download helper using yt-dlp with retries/backoff
 // ==============================
 async function downloadToTemp(url, formatArg) {
   // cria arquivo temporário pra determinar diretório de saída
   const { path: tmpPath, cleanup: cleanupTmpFile } = await tmp.file({ postfix: '.tmp', discardDescriptor: true, dir: TMP_DIR });
   const tmpDir = path.dirname(tmpPath);
-  const outTemplate = path.join(tmpDir, '%(id)s.%(ext)s');
+  const outTemplate = path.join(tmpDir, '%(title)s.%(ext)s');
 
   // args base (SEM --no-call-home)
   const baseArgs = [
@@ -296,6 +373,8 @@ app.get('/download', apiLimiter, async (req, res) => {
   if (!isAllowedUrl(url)) return res.status(400).json({ error: 'URL inválida ou bloqueada. Use uma URL pública HTTP(S).' });
 
   try {
+    const metadata = await getVideoMetadata(url, format);
+    validateVideo(metadata);
     const { filePath, cleanup } = await downloadToTemp(url, format);
     const ext = path.extname(filePath).toLowerCase();
     const contentType = ext === '.mp4' ? 'video/mp4' : ext === '.webm' ? 'video/webm' : ext === '.m4a' || ext === '.aac' ? 'audio/mp4' : 'application/octet-stream';
@@ -307,7 +386,8 @@ app.get('/download', apiLimiter, async (req, res) => {
     stream.on('error', (err) => { try{ cleanup(); } catch(_){}; console.error('Stream error', err); if(!res.headersSent) res.status(500).json({ error: 'Stream error' }); });
   } catch (err) {
     console.error('Download error', err);
-    res.status(500).json({ error: 'Failed to download', details: err.message });
+    const statusCode = err.message.includes('Vídeo muito longo') || err.message.includes('Arquivo muito grande') ? 400 : 500;
+    res.status(statusCode).json({ error: err.message.includes('Vídeo muito longo') || err.message.includes('Arquivo muito grande') ? err.message : 'Failed to download', details: statusCode === 500 ? err.message : undefined });
   }
 });
 
@@ -319,6 +399,8 @@ app.get('/api/download', apiLimiter, async (req, res) => {
   if (!isAllowedUrl(url)) return res.status(400).json({ error: 'URL inválida ou bloqueada. Use uma URL pública HTTP(S).' });
 
   try {
+    const metadata = await getVideoMetadata(url, format);
+    validateVideo(metadata);
     const { filePath, cleanup } = await downloadToTemp(url, format);
     const ext = path.extname(filePath).toLowerCase();
     const contentType = ext === '.mp4' ? 'video/mp4' : ext === '.webm' ? 'video/webm' : ext === '.m4a' || ext === '.aac' ? 'audio/mp4' : 'application/octet-stream';
@@ -330,7 +412,8 @@ app.get('/api/download', apiLimiter, async (req, res) => {
     stream.on('error', (err) => { try{ cleanup(); } catch(_){}; console.error('Stream error', err); if(!res.headersSent) res.status(500).json({ error: 'Stream error' }); });
   } catch (err) {
     console.error('Download error', err);
-    res.status(500).json({ error: 'Failed to download', details: err.message });
+    const statusCode = err.message.includes('Vídeo muito longo') || err.message.includes('Arquivo muito grande') ? 400 : 500;
+    res.status(statusCode).json({ error: err.message.includes('Vídeo muito longo') || err.message.includes('Arquivo muito grande') ? err.message : 'Failed to download', details: statusCode === 500 ? err.message : undefined });
   }
 });
 

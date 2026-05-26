@@ -15,6 +15,8 @@ const TMP_DIR = process.env.TMP_DIR || undefined;
 const COOKIES_FILE = process.env.COOKIES_FILE || '';
 const YTDLP_PATH = process.env.YTDLP_PATH || 'yt-dlp';
 const BLOCKED_HOSTS = (process.env.BLOCKED_HOSTS || '').split(',').map(h => h.trim().toLowerCase()).filter(Boolean);
+const MAX_VIDEO_DURATION = Number(process.env.MAX_VIDEO_DURATION || 600);
+const MAX_FILE_SIZE = Number(process.env.MAX_FILE_SIZE || 100 * 1024 * 1024);
 
 const app = express();
 app.use(express.json());
@@ -46,6 +48,73 @@ function mapFormatToYtDlp(format){
     case '480': return 'bestvideo[height<=480]+bestaudio/best[height<=480]/best';
     case 'audio': return 'bestaudio/best';
     default: return 'bestvideo+bestaudio/best';
+  }
+}
+
+async function getVideoMetadata(url, formatArg) {
+  const args = [
+    url,
+    '--dump-json',
+    '--no-playlist',
+    '-f', mapFormatToYtDlp(formatArg),
+    '--no-warnings',
+  ];
+
+  if (COOKIES_FILE) args.push('--cookies', COOKIES_FILE);
+
+  if (/instagram\.com/i.test(url)) {
+    args.push('--add-header', 'User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36');
+  }
+
+  if (/youtube\.com/i.test(url)) {
+    args.push('--extractor-args', 'youtube:player-client=web,android');
+  }
+
+  return new Promise((resolve, reject) => {
+    let stdout = '';
+    let stderr = '';
+    const child = spawn(YTDLP_PATH, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+    child.stdout.on('data', d => { stdout += d.toString(); });
+    child.stderr.on('data', d => { stderr += d.toString(); });
+    child.on('error', err => reject(new Error('Failed to start yt-dlp: ' + err.message)));
+    child.on('close', code => {
+      if (code !== 0) {
+        reject(new Error('Falha ao obter metadados do vídeo. ' + stderr.slice(0, 300)));
+        return;
+      }
+      try {
+        const firstLine = stdout.split('\n')[0];
+        const metadata = JSON.parse(firstLine);
+        resolve(metadata);
+      } catch (err) {
+        reject(new Error('Failed to parse metadata JSON: ' + err.message));
+      }
+    });
+    setTimeout(() => { try { child.kill('SIGKILL'); } catch (e) {} }, YTDLP_TIMEOUT);
+  });
+}
+
+function validateVideo(metadata) {
+  const duration = metadata.duration;
+  if (duration && duration > MAX_VIDEO_DURATION) {
+    const minutes = Math.floor(MAX_VIDEO_DURATION / 60);
+    throw new Error(`Vídeo muito longo. Limite máximo: ${minutes} minutos.`);
+  }
+
+  let fileSize = metadata.filesize || metadata.filesize_approx;
+
+  if (!fileSize && metadata.requested_formats) {
+    fileSize = metadata.requested_formats.reduce((sum, f) => sum + (f.filesize || f.filesize_approx || 0), 0);
+  }
+
+  if (!fileSize && metadata.formats && metadata.formats.length > 0) {
+    const last = metadata.formats[metadata.formats.length - 1];
+    fileSize = last.filesize || last.filesize_approx;
+  }
+
+  if (fileSize && fileSize > MAX_FILE_SIZE) {
+    const sizeMB = Math.round(MAX_FILE_SIZE / (1024 * 1024));
+    throw new Error(`Arquivo muito grande para download. Limite máximo: ${sizeMB}MB.`);
   }
 }
 
@@ -101,7 +170,7 @@ function isAllowedUrl(u){
 async function downloadToTemp(url, format){
   const { path: tmpPath, cleanup } = await tmp.file({ postfix: '.tmp', discardDescriptor: true, dir: TMP_DIR });
   const tmpDir = path.dirname(tmpPath);
-  const outTemplate = path.join(tmpDir, '%(id)s.%(ext)s');
+  const outTemplate = path.join(tmpDir, '%(title)s.%(ext)s');
 
   const fmt = mapFormatToYtDlp(format);
 
@@ -164,6 +233,8 @@ app.get('/api/download', requireApiKey, async (req, res) => {
   if(!isAllowedUrl(url)) return res.status(400).json({ error: 'URL inválida ou bloqueada. Use uma URL pública HTTP(S).' });
 
   try {
+    const metadata = await getVideoMetadata(url, format);
+    validateVideo(metadata);
     const { filePath, cleanup } = await downloadToTemp(url, format);
     res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
     res.setHeader('Content-Type', 'application/octet-stream');
@@ -173,7 +244,8 @@ app.get('/api/download', requireApiKey, async (req, res) => {
     stream.on('error', (err) => { try{ cleanup(); }catch(_){}; console.error(err); if(!res.headersSent) res.status(500).json({ error: 'Stream error' }); });
   } catch(err){
     console.error('Download error', err);
-    res.status(500).json({ error: 'Failed to download', details: err.message });
+    const statusCode = err.message.includes('Vídeo muito longo') || err.message.includes('Arquivo muito grande') ? 400 : 500;
+    res.status(statusCode).json({ error: err.message.includes('Vídeo muito longo') || err.message.includes('Arquivo muito grande') ? err.message : 'Failed to download', details: statusCode === 500 ? err.message : undefined });
   }
 });
 
