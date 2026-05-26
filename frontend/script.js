@@ -79,6 +79,42 @@
       }
     }
 
+    function displaySuccess(filename) {
+      var maxLen = 40;
+      var isTruncated = filename.length > maxLen;
+      var displayName = isTruncated ? filename.slice(0, maxLen) + '\u2026' : filename;
+
+      if (!message) return;
+      message.innerHTML = '';
+      message.className = 'msg success';
+
+      var textSpan = document.createElement('span');
+      textSpan.textContent = _t('download.started', { filename: displayName });
+      message.appendChild(textSpan);
+
+      if (isTruncated) {
+        var toggle = document.createElement('button');
+        toggle.className = 'msg-toggle';
+        toggle.textContent = _t('download.show-full');
+        toggle.type = 'button';
+        (function (full) {
+          toggle.addEventListener('click', function () {
+            var expanded = toggle.dataset.expanded === 'true';
+            if (expanded) {
+              textSpan.textContent = _t('download.started', { filename: displayName });
+              toggle.dataset.expanded = 'false';
+              toggle.textContent = _t('download.show-full');
+            } else {
+              textSpan.textContent = _t('download.started', { filename: full });
+              toggle.dataset.expanded = 'true';
+              toggle.textContent = _t('download.show-less');
+            }
+          });
+        })(filename);
+        message.appendChild(toggle);
+      }
+    }
+
     async function pasteFromClipboard() {
       if (urlInput.value) {
         urlInput.value = '';
@@ -130,7 +166,7 @@
         anchor.click();
         anchor.remove();
         URL.revokeObjectURL(blobUrl);
-        setMessage(_t('download.started', { filename: filename }), 'success');
+        displaySuccess(filename);
         urlInput.value = '';
         updatePasteButton(pasteButton, urlInput);
       } catch (error) {

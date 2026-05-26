@@ -263,10 +263,32 @@ input:focus, select:focus {
   margin-top: 14px;
   color: var(--muted);
   line-height: 1.5;
+  word-break: break-word;
 }
 
 .msg.error { color: var(--danger); }
 .msg.success { color: var(--ok); }
+
+.msg .msg-toggle {
+  display: block;
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--brand);
+  font: inherit;
+  font-weight: 600;
+  font-size: .82rem;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(73, 211, 255, .3);
+  transition: text-decoration-color .2s;
+}
+
+.msg .msg-toggle:hover {
+  text-decoration-color: var(--brand);
+}
 
 .download-progress {
   margin-top: 20px;
