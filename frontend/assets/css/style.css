@@ -394,11 +394,32 @@ input:focus, select:focus {
 .section-head p { margin: 10px 0 0; color: var(--muted); max-width: 680px; line-height: 1.7; }
 
 .platform-grid { grid-template-columns: repeat(4, 1fr); }
-.platform-download-grid {
+.platform-download-grid,
+.platform-info-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 20px;
   align-items: start;
+}
+
+.platform-features {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.platform-features li {
+  padding: 4px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .06);
+  border: 1px solid rgba(255, 255, 255, .08);
+  font-size: .78rem;
+  color: var(--muted);
+  line-height: 1.6;
 }
 .steps-grid { grid-template-columns: repeat(3, 1fr); }
 .stats { grid-template-columns: repeat(3, 1fr); margin-top: 24px; }
@@ -790,6 +811,7 @@ input:focus, select:focus {
   .hero-grid,
   .platform-grid,
   .platform-download-grid,
+  .platform-info-grid,
   .steps-grid,
   .stats { grid-template-columns: 1fr; }
   .section-head { display: block; }
