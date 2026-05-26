@@ -1,48 +1,55 @@
 (function () {
-  let deferredPrompt;
-  const btnInstall = document.getElementById("btnInstall");
+  var _t = window.i18n ? window.i18n.t : function (k) { return k; };
+
+  var deferredPrompt;
+  var btnInstall = document.getElementById("btnInstall");
   if (!btnInstall) return;
 
-  const isiOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  var isiOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
-  window.addEventListener("beforeinstallprompt", (e) => {
+  window.addEventListener("beforeinstallprompt", function (e) {
     e.preventDefault();
     deferredPrompt = e;
     btnInstall.style.display = "block";
   });
 
-  btnInstall.addEventListener("click", () => {
+  btnInstall.addEventListener("click", function () {
     btnInstall.style.display = "none";
     if (!deferredPrompt) {
       if (isiOS || isSafari) {
-        alert('No Safari do iPhone, toque no ícone "Compartilhar" 🫘 e depois em "Adicionar à Tela de Início".');
+        alert(_t('install.safari-prompt'));
       }
       return;
     }
     deferredPrompt.prompt();
-    deferredPrompt.userChoice.then((choiceResult) => {
-      console.log("Usuário escolheu:", choiceResult.outcome);
+    deferredPrompt.userChoice.then(function (choiceResult) {
+      console.log("Usu\u00e1rio escolheu:", choiceResult.outcome);
       deferredPrompt = null;
     });
   });
 
   function filenameFromDisposition(disposition, contentType) {
-    const utf = disposition && disposition.match(/filename\*=UTF-8''([^;]+)/i);
-    const ascii = disposition && disposition.match(/filename="?([^";]+)"?/i);
+    var utf = disposition && disposition.match(/filename\*=UTF-8''([^;]+)/i);
+    var ascii = disposition && disposition.match(/filename="?([^";]+)"?/i);
     if (utf) return decodeURIComponent(utf[1]);
     if (ascii) return ascii[1];
-    const ext = (contentType || 'video/mp4').split('/').pop().split(';')[0] || 'mp4';
-    return `isalvei-video.${ext}`;
+    var ext = (contentType || 'video/mp4').split('/').pop().split(';')[0] || 'mp4';
+    return 'isalvei-video.' + ext;
   }
 
-  document.querySelectorAll('[data-download-form]').forEach(form => {
-    const urlInput = form.querySelector('[name="url"]');
-    const formatInput = form.querySelector('[name="format"]');
-    const pasteButton = form.querySelector('[data-paste]');
-    const submitButton = form.querySelector('[type="submit"]');
-    const card = form.closest('[data-download-card]') || form.parentElement;
-    const message = card.querySelector('[data-message]');
+  function updatePasteButton(btn, input) {
+    if (!btn) return;
+    btn.textContent = input && input.value ? _t('download.clear') : _t('download.paste');
+  }
+
+  document.querySelectorAll('[data-download-form]').forEach(function (form) {
+    var urlInput = form.querySelector('[name="url"]');
+    var formatInput = form.querySelector('[name="format"]');
+    var pasteButton = form.querySelector('[data-paste]');
+    var submitButton = form.querySelector('[type="submit"]');
+    var card = form.closest('[data-download-card]') || form.parentElement;
+    var message = card.querySelector('[data-message]');
 
     function setMessage(text, type) {
       if (!message) return;
@@ -53,66 +60,66 @@
 
     function setLoading(isLoading) {
       submitButton.disabled = isLoading;
-      submitButton.textContent = isLoading ? 'Preparando...' : 'Baixar agora';
+      submitButton.textContent = isLoading ? _t('download.preparing') : _t('download.submit');
     }
 
     async function pasteFromClipboard() {
       if (urlInput.value) {
         urlInput.value = '';
-        pasteButton.textContent = 'Colar link';
+        updatePasteButton(pasteButton, urlInput);
         urlInput.focus();
         return;
       }
 
       try {
         urlInput.value = await navigator.clipboard.readText();
-        pasteButton.textContent = 'Limpar';
-        setMessage('Link colado. Confira a URL e clique em baixar.');
+        updatePasteButton(pasteButton, urlInput);
+        setMessage(_t('download.pasted'));
       } catch (error) {
-        setMessage('Não foi possível acessar a área de transferência. Cole manualmente.', 'error');
+        setMessage(_t('download.clipboard-error'), 'error');
       }
     }
 
     async function downloadVideo(event) {
       event.preventDefault();
-      const videoUrl = urlInput.value.trim();
-      const format = formatInput ? formatInput.value : 'best';
+      var videoUrl = urlInput.value.trim();
+      var format = formatInput ? formatInput.value : 'best';
 
       if (!videoUrl) {
-        setMessage('Cole uma URL pública antes de baixar.', 'error');
+        setMessage(_t('download.url-required'), 'error');
         urlInput.focus();
         return;
       }
 
       setLoading(true);
-      setMessage('Validando link e preparando o arquivo. Isso pode levar alguns instantes...');
+      setMessage(_t('download.validating'));
 
       try {
-        const params = new URLSearchParams({ url: videoUrl, format });
-        const response = await fetch(`/api/download?${params.toString()}`);
+        var params = new URLSearchParams({ url: videoUrl, format: format });
+        var response = await fetch('/api/download?' + params.toString());
 
         if (!response.ok) {
-          const body = await response.json().catch(() => ({}));
-          const retryAfter = response.headers.get('Retry-After');
-          const suffix = retryAfter ? ` Tente novamente em ${retryAfter}s.` : '';
-          throw new Error(`${body.error || body.details || response.statusText}.${suffix}`);
+          var body = await response.json().catch(function () { return {}; });
+          var retryAfter = response.headers.get('Retry-After');
+          var suffix = retryAfter ? ' ' + _t('download.retry-after', { seconds: retryAfter }) : '';
+          throw new Error((body.error || body.details || response.statusText) + '.' + suffix);
         }
 
-        const blob = await response.blob();
-        const filename = filenameFromDisposition(response.headers.get('Content-Disposition'), response.headers.get('Content-Type'));
-        const blobUrl = URL.createObjectURL(blob);
-        const anchor = document.createElement('a');
+        var blob = await response.blob();
+        var filename = filenameFromDisposition(response.headers.get('Content-Disposition'), response.headers.get('Content-Type'));
+        var blobUrl = URL.createObjectURL(blob);
+        var anchor = document.createElement('a');
         anchor.href = blobUrl;
         anchor.download = filename;
         document.body.appendChild(anchor);
         anchor.click();
         anchor.remove();
         URL.revokeObjectURL(blobUrl);
-        setMessage(`Download iniciado: ${filename}`, 'success');
+        setMessage(_t('download.started', { filename: filename }), 'success');
         urlInput.value = '';
-        if (pasteButton) pasteButton.textContent = 'Colar link';
+        updatePasteButton(pasteButton, urlInput);
       } catch (error) {
-        setMessage(`Erro: ${error.message}`, 'error');
+        setMessage(_t('download.error') + ': ' + error.message, 'error');
       } finally {
         setLoading(false);
       }
@@ -120,5 +127,21 @@
 
     if (pasteButton) pasteButton.addEventListener('click', pasteFromClipboard);
     form.addEventListener('submit', downloadVideo);
+  });
+
+  document.addEventListener('localechange', function () {
+    _t = window.i18n ? window.i18n.t : function (k) { return k; };
+    if (btnInstall) {
+      btnInstall.textContent = _t('install.btn');
+    }
+    document.querySelectorAll('[data-download-form]').forEach(function (form) {
+      var input = form.querySelector('[name="url"]');
+      var pasteBtn = form.querySelector('[data-paste]');
+      var submitBtn = form.querySelector('[type="submit"]');
+      updatePasteButton(pasteBtn, input);
+      if (submitBtn && !submitBtn.disabled) {
+        submitBtn.textContent = _t('download.submit');
+      }
+    });
   });
 })();

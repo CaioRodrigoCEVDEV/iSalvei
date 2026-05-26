@@ -10,6 +10,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="iSalvei">
   <meta name="mobile-web-app-capable" content="yes">
+  <meta property="og:title" content="iSalvei">
   <link rel="manifest" href="/manifest.json">
   <link href="assets/img/favicon.png" rel="icon">
   <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
@@ -22,54 +23,68 @@
 <body>
   <header class="header">
     <div class="container navbar">
-      <a class="logo" href="#!" onclick="event.preventDefault();window.scrollTo({top:0,behavior:'smooth'})" aria-label="iSalvei início"><img class="logo-mark" src="assets/img/pwa-192x192.png" alt="iSalvei" width="42" height="42"> iSalvei</a>
-      <nav class="nav-links" aria-label="Navegação principal">
-        <a class="active" href="#!" data-nav="inicio">Início</a>
-        <a href="#opcoes" data-nav="opcoes">Opções</a>
-        <a href="#como-funciona" data-nav="como-funciona">Como baixar</a>
+      <a class="logo" href="#!" onclick="event.preventDefault();window.scrollTo({top:0,behavior:'smooth'})" aria-label="iSalvei in\u00edcio"><img class="logo-mark" src="assets/img/pwa-192x192.png" alt="iSalvei" width="42" height="42"> iSalvei</a>
+
+      <nav class="nav-links" data-i18n-aria-label="nav.aria-label">
+        <a class="active" href="#!" data-nav="inicio" data-i18n="nav.inicio">In\u00edcio</a>
+        <a href="#opcoes" data-nav="opcoes" data-i18n="nav.opcoes">Op\u00e7\u00f5es</a>
+        <a href="#como-funciona" data-nav="como-funciona" data-i18n="nav.como-funciona">Como baixar</a>
       </nav>
+
+      <div class="lang-wrap">
+        <select id="langSelect" data-i18n-aria-label="lang.label">
+          <option value="pt-BR">PT</option>
+          <option value="en">EN</option>
+          <option value="es">ES</option>
+          <option value="fr">FR</option>
+          <option value="de">DE</option>
+          <option value="it">IT</option>
+          <option value="ja">JA</option>
+          <option value="zh-CN">ZH</option>
+        </select>
+      </div>
     </div>
   </header>
 
-  <button id="btnInstall" class="btn btn-success" style="display: none;">📲 Instalar App</button>
+  <button id="btnInstall" class="btn btn-success" style="display: none;" data-i18n="install.btn">\ud83d\udcf2 Instalar App</button>
 
   <main>
     <section class="hero">
       <div class="container hero-grid">
         <div>
-          <p class="eyebrow">⚡ Downloads com rate limit e retry</p>
-          <h1>Salve vídeos públicos sem complicação.</h1>
-          <p class="lead">O iSalvei foi refatorado para aceitar links públicos de muitas plataformas suportadas pelo yt-dlp — não apenas X, Instagram e YouTube — mantendo limites por IP para proteger o serviço.</p>
+          <p class="eyebrow" data-i18n="hero.eyebrow">\u26a1 Downloads com rate limit e retry</p>
+          <h1 data-i18n="hero.title">Salve v\u00eddeos p\u00fablicos sem complica\u00e7\u00e3o.</h1>
+          <p class="lead" data-i18n="hero.desc">O iSalvei foi refatorado para aceitar links p\u00fablicos de muitas plataformas suportadas pelo yt-dlp \u2014 n\u00e3o apenas X, Instagram e YouTube \u2014 mantendo limites por IP para proteger o servi\u00e7o.</p>
           <div class="actions">
-            <a class="btn btn-primary" href="#download">Começar agora</a>
-            <a class="btn" href="#opcoes">Ver opções</a>
+            <a class="btn btn-primary" href="#download" data-i18n="hero.cta-primary">Come\u00e7ar agora</a>
+            <a class="btn" href="#opcoes" data-i18n="hero.cta-secondary">Ver op\u00e7\u00f5es</a>
           </div>
 
         </div>
 
         <section class="downloader-card" aria-labelledby="quick-download-title" id="download" data-download-card>
-          <p class="eyebrow">Download rápido</p>
-          <h2 id="quick-download-title">Cole seu link</h2>
-          <p class="lead">Use vídeos públicos e respeite direitos autorais e termos da plataforma de origem.</p>
+          <p class="eyebrow" data-i18n="download.eyebrow">Download r\u00e1pido</p>
+          <h2 id="quick-download-title" data-i18n="download.title">Cole seu link</h2>
+          <p class="lead" data-i18n="download.desc">Use v\u00eddeos p\u00fablicos e respeite direitos autorais e termos da plataforma de origem.</p>
           <form class="downloader-form" data-download-form>
             <div class="input-group">
-              <input name="url" type="url" inputmode="url" placeholder="https://exemplo.com/video..." autocomplete="off" required>
-              <button class="btn" type="button" data-paste>Colar link</button>
+              <input name="url" type="url" inputmode="url" data-i18n-placeholder="download.placeholder" placeholder="https://exemplo.com/video..." autocomplete="off" required>
+              <button class="btn" type="button" data-paste data-i18n="download.paste">Colar link</button>
             </div>
             <div class="form-row">
-              <select name="format" aria-label="Qualidade">
-                <option value="best">Melhor qualidade</option>
-                <option value="720">Até 720p</option>
-                <option value="480">Até 480p</option>
-                <option value="audio">Somente áudio</option>
+              <select name="format" data-i18n-aria-label="download.format.aria-label">
+                <option value="best" data-i18n="download.format.best">Melhor qualidade</option>
+                <option value="720" data-i18n="download.format.720">At\u00e9 720p</option>
+                <option value="480" data-i18n="download.format.480">At\u00e9 480p</option>
+                <option value="audio" data-i18n="download.format.audio">Somente \u00e1udio</option>
               </select>
-              <button class="btn btn-primary" type="submit">Baixar agora</button>
+              <button class="btn btn-primary" type="submit" data-i18n="download.submit">Baixar agora</button>
             </div>
           </form>
           <div class="msg" data-message aria-live="polite"></div>
           <div class="badges">
-            <div class="badge"><strong>Formatos flexíveis</strong>Vídeo completo ou áudio.</div>
-            <div class="badge"><strong>Proteção automática</strong>Rate limit e backoff no servidor.</div>
+            <div class="badge"><strong data-i18n="download.badge1.title">Formatos flex\u00edveis</strong><span data-i18n="download.badge1.desc">V\u00eddeo completo ou \u00e1udio.</span></div>
+            <div class="badge"><strong data-i18n="download.badge2.title">Prote\u00e7\u00e3o autom\u00e1tica</strong><span data-i18n="download.badge2.desc">Rate limit e backoff no servidor.</span></div>
           </div>
         </section>
       </div>
@@ -79,73 +94,73 @@
       <div class="container">
         <div class="section-head">
           <div>
-            <p class="eyebrow">Opções por plataforma</p>
-            <h2>Escolha a origem do vídeo</h2>
-            <p>Selecione a plataforma e cole o link do vídeo público que deseja baixar.</p>
+            <p class="eyebrow" data-i18n="opcoes.eyebrow">Op\u00e7\u00f5es por plataforma</p>
+            <h2 data-i18n="opcoes.title">Escolha a origem do v\u00eddeo</h2>
+            <p data-i18n="opcoes.desc">Selecione a plataforma e cole o link do v\u00eddeo p\u00fablico que deseja baixar.</p>
           </div>
         </div>
         <div class="platform-download-grid">
           <article class="downloader-card" data-download-card>
-            <p class="eyebrow">▶ YouTube</p>
-            <h3>YouTube Shorts</h3>
-            <p>Cole o link de um Short ou vídeo do YouTube. Formatos vertical e horizontal suportados.</p>
+            <p class="eyebrow" data-i18n="opcoes.youtube.eyebrow">\u25b6 YouTube</p>
+            <h3 data-i18n="opcoes.youtube.title">YouTube Shorts</h3>
+            <p data-i18n="opcoes.youtube.desc">Cole o link de um Short ou v\u00eddeo do YouTube. Formatos vertical e horizontal suportados.</p>
             <form class="downloader-form" data-download-form>
               <div class="input-group">
-                <input name="url" type="url" inputmode="url" placeholder="https://youtube.com/shorts/..." autocomplete="off" required>
-                <button class="btn" type="button" data-paste>Colar link</button>
+                <input name="url" type="url" inputmode="url" data-i18n-placeholder="opcoes.youtube.placeholder" placeholder="https://youtube.com/shorts/..." autocomplete="off" required>
+                <button class="btn" type="button" data-paste data-i18n="download.paste">Colar link</button>
               </div>
               <div class="form-row">
-                <select name="format" aria-label="Qualidade">
-                  <option value="best">Melhor qualidade</option>
-                  <option value="720">Até 720p</option>
-                  <option value="480">Até 480p</option>
-                  <option value="audio">Somente áudio</option>
+                <select name="format" data-i18n-aria-label="download.format.aria-label">
+                  <option value="best" data-i18n="download.format.best">Melhor qualidade</option>
+                  <option value="720" data-i18n="download.format.720">At\u00e9 720p</option>
+                  <option value="480" data-i18n="download.format.480">At\u00e9 480p</option>
+                  <option value="audio" data-i18n="download.format.audio">Somente \u00e1udio</option>
                 </select>
-                <button class="btn btn-primary" type="submit">Baixar agora</button>
+                <button class="btn btn-primary" type="submit" data-i18n="download.submit">Baixar agora</button>
               </div>
             </form>
             <div class="msg" data-message aria-live="polite"></div>
           </article>
 
           <article class="downloader-card" data-download-card>
-            <p class="eyebrow">◎ Instagram</p>
-            <h3>Instagram Reels / Posts</h3>
-            <p>Cole o link de um Reel, post ou vídeo público do Instagram.</p>
+            <p class="eyebrow" data-i18n="opcoes.instagram.eyebrow">\u25ce Instagram</p>
+            <h3 data-i18n="opcoes.instagram.title">Instagram Reels / Posts</h3>
+            <p data-i18n="opcoes.instagram.desc">Cole o link de um Reel, post ou v\u00eddeo p\u00fablico do Instagram.</p>
             <form class="downloader-form" data-download-form>
               <div class="input-group">
-                <input name="url" type="url" inputmode="url" placeholder="https://instagram.com/p/..." autocomplete="off" required>
-                <button class="btn" type="button" data-paste>Colar link</button>
+                <input name="url" type="url" inputmode="url" data-i18n-placeholder="opcoes.instagram.placeholder" placeholder="https://instagram.com/p/..." autocomplete="off" required>
+                <button class="btn" type="button" data-paste data-i18n="download.paste">Colar link</button>
               </div>
               <div class="form-row">
-                <select name="format" aria-label="Qualidade">
-                  <option value="best">Melhor qualidade</option>
-                  <option value="720">Até 720p</option>
-                  <option value="480">Até 480p</option>
-                  <option value="audio">Somente áudio</option>
+                <select name="format" data-i18n-aria-label="download.format.aria-label">
+                  <option value="best" data-i18n="download.format.best">Melhor qualidade</option>
+                  <option value="720" data-i18n="download.format.720">At\u00e9 720p</option>
+                  <option value="480" data-i18n="download.format.480">At\u00e9 480p</option>
+                  <option value="audio" data-i18n="download.format.audio">Somente \u00e1udio</option>
                 </select>
-                <button class="btn btn-primary" type="submit">Baixar agora</button>
+                <button class="btn btn-primary" type="submit" data-i18n="download.submit">Baixar agora</button>
               </div>
             </form>
             <div class="msg" data-message aria-live="polite"></div>
           </article>
 
           <article class="downloader-card" data-download-card>
-            <p class="eyebrow">𝕏 X / Twitter</p>
-            <h3>Posts com mídia</h3>
-            <p>Cole o link de um post público do X/Twitter que contenha vídeo ou imagem.</p>
+            <p class="eyebrow" data-i18n="opcoes.twitter.eyebrow">\ud835\udd4f X / Twitter</p>
+            <h3 data-i18n="opcoes.twitter.title">Posts com m\u00eddia</h3>
+            <p data-i18n="opcoes.twitter.desc">Cole o link de um post p\u00fablico do X/Twitter que contenha v\u00eddeo ou imagem.</p>
             <form class="downloader-form" data-download-form>
               <div class="input-group">
-                <input name="url" type="url" inputmode="url" placeholder="https://x.com/usuario/status/..." autocomplete="off" required>
-                <button class="btn" type="button" data-paste>Colar link</button>
+                <input name="url" type="url" inputmode="url" data-i18n-placeholder="opcoes.twitter.placeholder" placeholder="https://x.com/usuario/status/..." autocomplete="off" required>
+                <button class="btn" type="button" data-paste data-i18n="download.paste">Colar link</button>
               </div>
               <div class="form-row">
-                <select name="format" aria-label="Qualidade">
-                  <option value="best">Melhor qualidade</option>
-                  <option value="720">Até 720p</option>
-                  <option value="480">Até 480p</option>
-                  <option value="audio">Somente áudio</option>
+                <select name="format" data-i18n-aria-label="download.format.aria-label">
+                  <option value="best" data-i18n="download.format.best">Melhor qualidade</option>
+                  <option value="720" data-i18n="download.format.720">At\u00e9 720p</option>
+                  <option value="480" data-i18n="download.format.480">At\u00e9 480p</option>
+                  <option value="audio" data-i18n="download.format.audio">Somente \u00e1udio</option>
                 </select>
-                <button class="btn btn-primary" type="submit">Baixar agora</button>
+                <button class="btn btn-primary" type="submit" data-i18n="download.submit">Baixar agora</button>
               </div>
             </form>
             <div class="msg" data-message aria-live="polite"></div>
@@ -158,15 +173,15 @@
       <div class="container">
         <div class="section-head">
           <div>
-            <p class="eyebrow">Como funciona</p>
-            <h2>Três passos objetivos</h2>
-            <p>Uma experiência direta, pensada para celular e desktop.</p>
+            <p class="eyebrow" data-i18n="como-funciona.eyebrow">Como funciona</p>
+            <h2 data-i18n="como-funciona.title">Tr\u00eas passos objetivos</h2>
+            <p data-i18n="como-funciona.desc">Uma experi\u00eancia direta, pensada para celular e desktop.</p>
           </div>
         </div>
         <div class="steps-grid">
-          <article class="step-card"><div class="step-number">1</div><h3>Copie a URL</h3><p>Abra a publicação pública e copie o link do vídeo.</p></article>
-          <article class="step-card"><div class="step-number">2</div><h3>Cole no iSalvei</h3><p>Escolha a qualidade desejada e envie o link.</p></article>
-          <article class="step-card"><div class="step-number">3</div><h3>Baixe o arquivo</h3><p>O servidor prepara o arquivo e inicia o download no navegador.</p></article>
+          <article class="step-card"><div class="step-number">1</div><h3 data-i18n="step1.title">Copie a URL</h3><p data-i18n="step1.desc">Abra a publica\u00e7\u00e3o p\u00fablica e copie o link do v\u00eddeo.</p></article>
+          <article class="step-card"><div class="step-number">2</div><h3 data-i18n="step2.title">Cole no iSalvei</h3><p data-i18n="step2.desc">Escolha a qualidade desejada e envie o link.</p></article>
+          <article class="step-card"><div class="step-number">3</div><h3 data-i18n="step3.title">Baixe o arquivo</h3><p data-i18n="step3.desc">O servidor prepara o arquivo e inicia o download no navegador.</p></article>
         </div>
       </div>
     </section>
@@ -175,21 +190,32 @@
 
   <footer class="footer">
     <div class="container footer-inner">
-      <span>© 2026 iSalvei</span>
-      <span>Feito com <span style="color:var(--danger)">♥</span> para a comunidade</span>
+      <span data-i18n="footer.copyright">\u00a9 2026 iSalvei</span>
+      <span><span data-i18n="footer.madeWith">Feito com</span> <span style="color:var(--danger)">\u2665</span> <span data-i18n="footer.forCommunity">para a comunidade</span></span>
     </div>
   </footer>
 
-  <script src="script.js?v=2.0.0"></script>
+  <script src="assets/js/i18n.js?v=2.1.0"></script>
+  <script src="script.js?v=2.1.0"></script>
   <script>
+    var langSelect = document.getElementById('langSelect');
+    if (langSelect) {
+      langSelect.value = window.i18n ? window.i18n.getLocale() : 'pt-BR';
+      langSelect.addEventListener('change', function () {
+        if (window.i18n) window.i18n.setLocale(this.value);
+      });
+    }
+
     document.querySelectorAll('[data-nav]').forEach(function(link) {
       link.addEventListener('click', function(e) {
-        if (this.getAttribute('data-nav') === 'inicio') {
-          e.preventDefault();
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
+        var target = this.getAttribute('data-nav');
         document.querySelectorAll('[data-nav]').forEach(function(l) { l.classList.remove('active'); });
         this.classList.add('active');
+        if (target === 'inicio') {
+          e.preventDefault();
+          history.replaceState(null, '', window.location.pathname + window.location.search);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
       });
     });
     if ('serviceWorker' in navigator) {
