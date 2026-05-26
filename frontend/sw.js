@@ -1,4 +1,4 @@
-const CACHE_NAME = 'isalvei-v3';
+const CACHE_NAME = 'isalvei-v4';
 const OFFLINE_URL = '/';
 const PRECACHE_ASSETS = [
   '/',
@@ -19,6 +19,12 @@ self.addEventListener('install', (event) => {
       .then((cache) => cache.addAll(PRECACHE_ASSETS))
       .then(() => self.skipWaiting())
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('activate', (event) => {

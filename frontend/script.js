@@ -1,6 +1,10 @@
 (function () {
   let deferredPrompt;
   const btnInstall = document.getElementById("btnInstall");
+  if (!btnInstall) return;
+
+  const isiOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
@@ -10,6 +14,12 @@
 
   btnInstall.addEventListener("click", () => {
     btnInstall.style.display = "none";
+    if (!deferredPrompt) {
+      if (isiOS || isSafari) {
+        alert('No Safari do iPhone, toque no ícone "Compartilhar" 🫘 e depois em "Adicionar à Tela de Início".');
+      }
+      return;
+    }
     deferredPrompt.prompt();
     deferredPrompt.userChoice.then((choiceResult) => {
       console.log("Usuário escolheu:", choiceResult.outcome);
