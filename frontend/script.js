@@ -58,9 +58,25 @@
       if (type) message.classList.add(type);
     }
 
+    var formRow = card.querySelector('.form-row');
+    var progressEl = card.querySelector('[data-download-progress]');
+    var progressLabel = card.querySelector('[data-progress-label]');
+    var progressBar = card.querySelector('[data-progress-bar]');
+
     function setLoading(isLoading) {
       submitButton.disabled = isLoading;
-      submitButton.textContent = isLoading ? _t('download.preparing') : _t('download.submit');
+      if (isLoading) {
+        formRow.hidden = true;
+        progressEl.hidden = false;
+        progressLabel.textContent = _t('download.processing');
+        progressBar.style.animation = 'progressShimmer 1.5s ease infinite';
+        setMessage(_t('download.validating'));
+      } else {
+        formRow.hidden = false;
+        progressEl.hidden = true;
+        progressBar.style.animation = 'none';
+        progressBar.style.width = '0%';
+      }
     }
 
     async function pasteFromClipboard() {
@@ -92,7 +108,6 @@
       }
 
       setLoading(true);
-      setMessage(_t('download.validating'));
 
       try {
         var params = new URLSearchParams({ url: videoUrl, format: format });
@@ -138,9 +153,13 @@
       var input = form.querySelector('[name="url"]');
       var pasteBtn = form.querySelector('[data-paste]');
       var submitBtn = form.querySelector('[type="submit"]');
+      var progressLabel = form.closest('[data-download-card]') && form.closest('[data-download-card]').querySelector('[data-progress-label]');
       updatePasteButton(pasteBtn, input);
       if (submitBtn && !submitBtn.disabled) {
         submitBtn.textContent = _t('download.submit');
+      }
+      if (progressLabel) {
+        progressLabel.textContent = _t('download.processing');
       }
     });
   });
