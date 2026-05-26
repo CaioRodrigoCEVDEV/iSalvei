@@ -1,19 +1,22 @@
-const CACHE_NAME = 'isalvei-v2';
+const CACHE_NAME = 'isalvei-v3';
 const OFFLINE_URL = '/';
-const ASSETS_TO_CACHE = [
+const PRECACHE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/assets/css/style.css',
   '/assets/img/iSalvei.png',
   '/assets/img/favicon.png',
-  // adicione outros recursos estáticos importantes aqui
+  '/assets/img/pwa-192x192.png',
+  '/assets/img/pwa-512x512.png',
+  '/assets/img/apple-touch-icon.png',
+  '/script.js',
 ];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(ASSETS_TO_CACHE))
+      .then((cache) => cache.addAll(PRECACHE_ASSETS))
       .then(() => self.skipWaiting())
   );
 });
@@ -30,28 +33,41 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // navegação: network first, fallback para cache, fallback para offline
-  if (event.request.mode === 'navigate') {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  if (request.method !== 'GET') return;
+
+  if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(event.request).then(response => {
+      fetch(request).then(response => {
         const clone = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        caches.open(CACHE_NAME).then(cache => cache.put(request, clone));
         return response;
       }).catch(() =>
-        caches.match(event.request).then(cached => cached || caches.match(OFFLINE_URL))
+        caches.match(request).then(cached => cached || caches.match(OFFLINE_URL))
       )
     );
     return;
   }
 
-  // demais recursos: cache first, fallback para rede
+  if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/download')) {
+    event.respondWith(
+      fetch(request).catch(() => new Response(
+        JSON.stringify({ error: 'Você está offline. Conecte-se à internet para baixar vídeos.' }),
+        { status: 503, headers: { 'Content-Type': 'application/json' } }
+      ))
+    );
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then(cached => {
+    caches.match(request).then(cached => {
       if (cached) return cached;
-      return fetch(event.request).then(response => {
-        if (event.request.method === 'GET' && response && response.status === 200) {
+      return fetch(request).then(response => {
+        if (response && response.status === 200) {
           const responseClone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
+          caches.open(CACHE_NAME).then(cache => cache.put(request, responseClone));
         }
         return response;
       });

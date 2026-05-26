@@ -267,7 +267,7 @@ function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 // ==============================
 
 app.get('/sw.js', (req, res) => {
-  res.sendFile(__dirname + '/sw.js');
+  res.sendFile(__dirname + '/frontend/sw.js');
 });
 
 app.get('/manifest.json', (req, res) => {
