@@ -76,13 +76,27 @@ function isAllowedUrl(u) {
   }
 }
 
-function mapFormatToYtDlp(format) {
+function mapFormatToYtDlp(format, url) {
+  const isInstagram = url && /instagram\.com/i.test(url);
+  const mp4Fallback = '[ext=mp4]/';
+
+  // Instagram: preferir MP4 com H.264 para compatibilidade com WhatsApp
+  if (isInstagram) {
+    switch (String(format || 'best')) {
+      case '720': return `bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]${mp4Fallback}best`;
+      case '480': return `bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=480]+bestaudio/best[height<=480]${mp4Fallback}best`;
+      case 'audio': return 'bestaudio/best';
+      case 'best':
+      default: return `bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio${mp4Fallback}best`;
+    }
+  }
+
   switch (String(format || 'best')) {
-    case '720': return 'bestvideo[height<=720]+bestaudio/best[height<=720]/best';
-    case '480': return 'bestvideo[height<=480]+bestaudio/best[height<=480]/best';
+    case '720': return `bestvideo[height<=720]+bestaudio/best[height<=720]/best`;
+    case '480': return `bestvideo[height<=480]+bestaudio/best[height<=480]/best`;
     case 'audio': return 'bestaudio/best';
     case 'best':
-    default: return 'bestvideo+bestaudio/best';
+    default: return `bestvideo+bestaudio/best`;
   }
 }
 
@@ -99,7 +113,7 @@ async function downloadToTemp(url, formatArg) {
   const baseArgs = [
     url,
     '--no-playlist',
-    '-f', mapFormatToYtDlp(formatArg),
+    '-f', mapFormatToYtDlp(formatArg, url),
     '-o', outTemplate,
     '--restrict-filenames',
     '--no-warnings',
@@ -108,11 +122,25 @@ async function downloadToTemp(url, formatArg) {
     '--fragment-retries', '10',
     '--sleep-requests', '2',
     '--sleep-interval', '3',
-    '--max-sleep-interval', '8'
+    '--max-sleep-interval', '8',
+    '--merge-output-format', 'mp4'
   ];
 
   if (COOKIES_FILE) {
     baseArgs.push('--cookies', COOKIES_FILE);
+  }
+
+  // Instagram: extra args para melhor compatibilidade
+  if (/instagram\.com/i.test(url)) {
+    baseArgs.push('--extractor-args', 'instagram:api=private');
+    if (!COOKIES_FILE) {
+      console.warn('[yt-dlp] Instagram URL detectada sem COOKIES_FILE — autenticação necessária para mídia privada/restrita');
+    }
+  }
+
+  // YouTube: usar extra-args para melhor compatibilidade
+  if (/youtube\.com/i.test(url)) {
+    baseArgs.push('--extractor-args', 'youtube:player-client=web,android');
   }
 
   let attempt = 0;
@@ -269,8 +297,10 @@ app.get('/download', apiLimiter, async (req, res) => {
 
   try {
     const { filePath, cleanup } = await downloadToTemp(url, format);
+    const ext = path.extname(filePath).toLowerCase();
+    const contentType = ext === '.mp4' ? 'video/mp4' : ext === '.webm' ? 'video/webm' : ext === '.m4a' || ext === '.aac' ? 'audio/mp4' : 'application/octet-stream';
     res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
-    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Type', contentType);
     const stream = fs.createReadStream(filePath);
     stream.pipe(res);
     stream.on('close', () => { try{ cleanup(); } catch(_){} });
@@ -290,8 +320,10 @@ app.get('/api/download', apiLimiter, async (req, res) => {
 
   try {
     const { filePath, cleanup } = await downloadToTemp(url, format);
+    const ext = path.extname(filePath).toLowerCase();
+    const contentType = ext === '.mp4' ? 'video/mp4' : ext === '.webm' ? 'video/webm' : ext === '.m4a' || ext === '.aac' ? 'audio/mp4' : 'application/octet-stream';
     res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
-    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Type', contentType);
     const stream = fs.createReadStream(filePath);
     stream.pipe(res);
     stream.on('close', () => { try{ cleanup(); } catch(_){} });

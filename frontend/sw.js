@@ -1,4 +1,4 @@
-const CACHE_NAME = 'isalvei-v1';
+const CACHE_NAME = 'isalvei-v2';
 const OFFLINE_URL = '/index.html';
 const ASSETS_TO_CACHE = [
   '/',
@@ -30,22 +30,30 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // estratégia: cache first, fallback para rede, fallback para offline page
+  // navegação: network first, fallback para cache, fallback para offline
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request).then(response => {
+        const clone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+        return response;
+      }).catch(() =>
+        caches.match(event.request).then(cached => cached || caches.match(OFFLINE_URL))
+      )
+    );
+    return;
+  }
+
+  // demais recursos: cache first, fallback para rede
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) return cached;
       return fetch(event.request).then(response => {
-        // opcional: cachear respostas GET bem-sucedidas
         if (event.request.method === 'GET' && response && response.status === 200) {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseClone));
         }
         return response;
-      }).catch(() => {
-        // se for navegação e estiver offline, retorna a página offline
-        if (event.request.mode === 'navigate') {
-          return caches.match(OFFLINE_URL);
-        }
       });
     })
   );

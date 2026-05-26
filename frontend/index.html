@@ -11,17 +11,16 @@
   <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <link href="assets/css/style.css?v=2.0.0" rel="stylesheet">
 </head>
 <body>
   <header class="header">
     <div class="container navbar">
-      <a class="logo" href="index.html" aria-label="iSalvei início"><span class="logo-mark">▶</span> iSalvei</a>
+      <a class="logo" href="#!" onclick="event.preventDefault();window.scrollTo({top:0,behavior:'smooth'})" aria-label="iSalvei início"><span class="logo-mark">▶</span> iSalvei</a>
       <nav class="nav-links" aria-label="Navegação principal">
-        <a class="active" href="index.html?v=2.0.0">Início</a>
-        <a href="download.html?v=2.0.0">Baixar</a>
-        <a href="x.html?v=2.0.0">Plataformas</a>
+        <a class="active" href="#!" onclick="event.preventDefault();window.scrollTo({top:0,behavior:'smooth'})">Início</a>
+        <a href="#opcoes">Opções</a>
       </nav>
     </div>
   </header>
@@ -34,17 +33,13 @@
           <h1>Salve vídeos públicos sem complicação.</h1>
           <p class="lead">O iSalvei foi refatorado para aceitar links públicos de muitas plataformas suportadas pelo yt-dlp — não apenas X, Instagram e YouTube — mantendo limites por IP para proteger o serviço.</p>
           <div class="actions">
-            <a class="btn btn-primary" href="download.html?v=2.0.0">Começar agora</a>
-            <a class="btn" href="x.html?v=2.0.0">Ver plataformas</a>
+            <a class="btn btn-primary" href="#download">Começar agora</a>
+            <a class="btn" href="#opcoes">Ver opções</a>
           </div>
-          <div class="stats" aria-label="Destaques">
-            <div class="stat"><strong>10/min</strong><p>Limite padrão por IP, ajustável por variável de ambiente.</p></div>
-            <div class="stat"><strong>yt-dlp</strong><p>Motor de download compatível com centenas de extratores.</p></div>
-            <div class="stat"><strong>Seguro</strong><p>Bloqueia protocolos não HTTP(S), localhost e redes privadas.</p></div>
-          </div>
+
         </div>
 
-        <section class="downloader-card" aria-labelledby="quick-download-title">
+        <section class="downloader-card" aria-labelledby="quick-download-title" id="download" data-download-card>
           <p class="eyebrow">Download rápido</p>
           <h2 id="quick-download-title">Cole seu link</h2>
           <p class="lead">Use vídeos públicos e respeite direitos autorais e termos da plataforma de origem.</p>
@@ -72,6 +67,86 @@
       </div>
     </section>
 
+    <section class="section" id="opcoes">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Opções por plataforma</p>
+            <h2>Escolha a origem do vídeo</h2>
+            <p>Selecione a plataforma e cole o link do vídeo público que deseja baixar.</p>
+          </div>
+        </div>
+        <div class="platform-download-grid">
+          <article class="downloader-card" data-download-card>
+            <p class="eyebrow">▶ YouTube</p>
+            <h3>YouTube Shorts</h3>
+            <p>Cole o link de um Short ou vídeo do YouTube. Formatos vertical e horizontal suportados.</p>
+            <form class="downloader-form" data-download-form>
+              <div class="input-group">
+                <input name="url" type="url" inputmode="url" placeholder="https://youtube.com/shorts/..." autocomplete="off" required>
+                <button class="btn" type="button" data-paste>Colar link</button>
+              </div>
+              <div class="form-row">
+                <select name="format" aria-label="Qualidade">
+                  <option value="best">Melhor qualidade</option>
+                  <option value="720">Até 720p</option>
+                  <option value="480">Até 480p</option>
+                  <option value="audio">Somente áudio</option>
+                </select>
+                <button class="btn btn-primary" type="submit">Baixar agora</button>
+              </div>
+            </form>
+            <div class="msg" data-message aria-live="polite"></div>
+          </article>
+
+          <article class="downloader-card" data-download-card>
+            <p class="eyebrow">◎ Instagram</p>
+            <h3>Instagram Reels / Posts</h3>
+            <p>Cole o link de um Reel, post ou vídeo público do Instagram.</p>
+            <div class="notice" style="margin-top:0;margin-bottom:14px;font-size:.88rem">Requer cookies do Instagram configurados no servidor via <code>COOKIES_FILE</code>.</div>
+            <form class="downloader-form" data-download-form>
+              <div class="input-group">
+                <input name="url" type="url" inputmode="url" placeholder="https://instagram.com/p/..." autocomplete="off" required>
+                <button class="btn" type="button" data-paste>Colar link</button>
+              </div>
+              <div class="form-row">
+                <select name="format" aria-label="Qualidade">
+                  <option value="best">Melhor qualidade</option>
+                  <option value="720">Até 720p</option>
+                  <option value="480">Até 480p</option>
+                  <option value="audio">Somente áudio</option>
+                </select>
+                <button class="btn btn-primary" type="submit">Baixar agora</button>
+              </div>
+            </form>
+            <div class="msg" data-message aria-live="polite"></div>
+          </article>
+
+          <article class="downloader-card" data-download-card>
+            <p class="eyebrow">𝕏 X / Twitter</p>
+            <h3>Posts com mídia</h3>
+            <p>Cole o link de um post público do X/Twitter que contenha vídeo ou imagem.</p>
+            <form class="downloader-form" data-download-form>
+              <div class="input-group">
+                <input name="url" type="url" inputmode="url" placeholder="https://x.com/usuario/status/..." autocomplete="off" required>
+                <button class="btn" type="button" data-paste>Colar link</button>
+              </div>
+              <div class="form-row">
+                <select name="format" aria-label="Qualidade">
+                  <option value="best">Melhor qualidade</option>
+                  <option value="720">Até 720p</option>
+                  <option value="480">Até 480p</option>
+                  <option value="audio">Somente áudio</option>
+                </select>
+                <button class="btn btn-primary" type="submit">Baixar agora</button>
+              </div>
+            </form>
+            <div class="msg" data-message aria-live="polite"></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
     <section class="section">
       <div class="container">
         <div class="section-head">
@@ -88,6 +163,8 @@
         </div>
       </div>
     </section>
+
+
   </main>
 
   <footer class="footer">
