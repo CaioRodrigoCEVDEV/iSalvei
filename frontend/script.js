@@ -1,26 +1,20 @@
 (function () {
-  let deferredPrompt = null;
-  const installBtn = document.getElementById('installBtn');
+  let deferredPrompt;
+  const btnInstall = document.getElementById("btnInstall");
 
-  window.addEventListener('beforeinstallprompt', (e) => {
+  window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    if (installBtn) installBtn.hidden = false;
+    btnInstall.style.display = "block";
   });
 
-  if (installBtn) {
-    installBtn.addEventListener('click', async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      const result = await deferredPrompt.userChoice;
-      if (result.outcome === 'accepted') installBtn.hidden = true;
+  btnInstall.addEventListener("click", () => {
+    btnInstall.style.display = "none";
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then((choiceResult) => {
+      console.log("Usuário escolheu:", choiceResult.outcome);
       deferredPrompt = null;
     });
-  }
-
-  window.addEventListener('appinstalled', () => {
-    if (installBtn) installBtn.hidden = true;
-    deferredPrompt = null;
   });
 
   function filenameFromDisposition(disposition, contentType) {

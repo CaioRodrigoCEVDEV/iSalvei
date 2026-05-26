@@ -344,7 +344,7 @@ input:focus, select:focus {
   flex-wrap: wrap;
 }
 
-.install-float {
+.btn-success {
   position: fixed;
   top: 12px;
   left: 50%;
@@ -365,7 +365,7 @@ input:focus, select:focus {
   transition: transform .2s ease, box-shadow .2s ease;
 }
 
-.install-float:hover {
+.btn-success:hover {
   transform: translateX(-50%) translateY(-2px);
   box-shadow: 0 12px 40px rgba(46, 229, 157, 0.55);
 }
