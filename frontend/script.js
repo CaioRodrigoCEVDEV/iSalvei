@@ -100,21 +100,36 @@
     }
 
     function triggerDownload() {
-      if (!pendingBlob) return;
-      var blobUrl = URL.createObjectURL(pendingBlob);
-      var anchor = document.createElement('a');
-      anchor.href = blobUrl;
-      anchor.download = pendingFilename;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(blobUrl);
-      displaySuccess(pendingFilename);
-      pendingBlob = null;
-      pendingFilename = null;
-      readyEl.hidden = true;
-      formRow.hidden = false;
-      submitButton.disabled = false;
+      if (!pendingBlob || !pendingFilename) {
+        console.error('triggerDownload: missing blob or filename');
+        return;
+      }
+      if (pendingBlob.size === 0) {
+        console.error('triggerDownload: blob is empty');
+        cancelProcessing();
+        setMessage(_t('download.error'), 'error');
+        return;
+      }
+      try {
+        var blobUrl = URL.createObjectURL(pendingBlob);
+        var anchor = document.createElement('a');
+        anchor.href = blobUrl;
+        anchor.download = pendingFilename;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+        setTimeout(function () { URL.revokeObjectURL(blobUrl); }, 5000);
+        displaySuccess(pendingFilename);
+        pendingBlob = null;
+        pendingFilename = null;
+        readyEl.hidden = true;
+        formRow.hidden = false;
+        submitButton.disabled = false;
+      } catch (error) {
+        console.error('triggerDownload error:', error);
+        cancelProcessing();
+        setMessage(_t('download.error') + ': ' + error.message, 'error');
+      }
     }
 
     function cancelProcessing() {
