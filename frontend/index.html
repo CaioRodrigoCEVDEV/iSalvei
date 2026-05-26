@@ -27,7 +27,6 @@
         <a class="active" href="#!" data-nav="inicio">Início</a>
         <a href="#opcoes" data-nav="opcoes">Opções</a>
         <a href="#como-funciona" data-nav="como-funciona">Como baixar</a>
-        <button class="btn btn-install" id="installApp" hidden>Instalar App</button>
       </nav>
     </div>
   </header>
@@ -178,6 +177,18 @@
       <span>Feito com <span style="color:var(--danger)">♥</span> para a comunidade</span>
     </div>
   </footer>
+
+  <div class="modal-overlay" id="installModal" hidden>
+    <div class="modal">
+      <img class="modal-icon" src="assets/img/pwa-192x192.png" alt="iSalvei" width="80" height="80">
+      <h3 class="modal-title">Instalar iSalvei</h3>
+      <p class="modal-desc">Instale o iSalvei na tela inicial e acesse rapidamente como um app nativo.</p>
+      <div class="modal-actions">
+        <button class="btn btn-primary modal-install-btn" id="installConfirm">Instalar</button>
+        <button class="btn modal-cancel-btn" id="installDismiss">Agora não</button>
+      </div>
+    </div>
+  </div>
 
   <script src="script.js?v=2.0.0"></script>
   <script>
