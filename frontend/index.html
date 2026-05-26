@@ -22,7 +22,7 @@
 <body>
   <header class="header">
     <div class="container navbar">
-      <a class="logo" href="#!" onclick="event.preventDefault();window.scrollTo({top:0,behavior:'smooth'})" aria-label="iSalvei início"><span class="logo-mark">▶</span> iSalvei</a>
+      <a class="logo" href="#!" onclick="event.preventDefault();window.scrollTo({top:0,behavior:'smooth'})" aria-label="iSalvei início"><img class="logo-mark" src="assets/img/pwa-192x192.png" alt="iSalvei" width="42" height="42"> iSalvei</a>
       <nav class="nav-links" aria-label="Navegação principal">
         <a class="active" href="#!" data-nav="inicio">Início</a>
         <a href="#opcoes" data-nav="opcoes">Opções</a>
@@ -178,17 +178,7 @@
     </div>
   </footer>
 
-  <div class="modal-overlay" id="installModal" hidden>
-    <div class="modal">
-      <img class="modal-icon" src="assets/img/pwa-192x192.png" alt="iSalvei" width="80" height="80">
-      <h3 class="modal-title">Instalar iSalvei</h3>
-      <p class="modal-desc">Instale o iSalvei na tela inicial e acesse rapidamente como um app nativo.</p>
-      <div class="modal-actions">
-        <button class="btn btn-primary modal-install-btn" id="installConfirm">Instalar</button>
-        <button class="btn modal-cancel-btn" id="installDismiss">Agora não</button>
-      </div>
-    </div>
-  </div>
+  <button class="install-float" id="installBtn" hidden>INSTALAR APP</button>
 
   <script src="script.js?v=2.0.0"></script>
   <script>

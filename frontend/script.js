@@ -1,51 +1,25 @@
 (function () {
   let deferredPrompt = null;
-  const modal = document.getElementById('installModal');
-  const confirmBtn = document.getElementById('installConfirm');
-  const dismissBtn = document.getElementById('installDismiss');
-
-  function showModal() {
-    if (modal) modal.hidden = false;
-  }
-
-  function hideModal() {
-    if (modal) modal.hidden = true;
-  }
+  const installBtn = document.getElementById('installBtn');
 
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    showModal();
+    if (installBtn) installBtn.hidden = false;
   });
 
-  if (confirmBtn) {
-    confirmBtn.addEventListener('click', async () => {
+  if (installBtn) {
+    installBtn.addEventListener('click', async () => {
       if (!deferredPrompt) return;
       deferredPrompt.prompt();
       const result = await deferredPrompt.userChoice;
-      if (result.outcome === 'accepted') hideModal();
+      if (result.outcome === 'accepted') installBtn.hidden = true;
       deferredPrompt = null;
-    });
-  }
-
-  if (dismissBtn) {
-    dismissBtn.addEventListener('click', () => {
-      hideModal();
-      deferredPrompt = null;
-    });
-  }
-
-  if (modal) {
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        hideModal();
-        deferredPrompt = null;
-      }
     });
   }
 
   window.addEventListener('appinstalled', () => {
-    hideModal();
+    if (installBtn) installBtn.hidden = true;
     deferredPrompt = null;
   });
 
