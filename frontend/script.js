@@ -62,21 +62,67 @@
     var progressEl = card.querySelector('[data-download-progress]');
     var progressLabel = card.querySelector('[data-progress-label]');
     var progressBar = card.querySelector('[data-progress-bar]');
+    var progressPct = card.querySelector('[data-progress-pct]');
+    var readyEl = card.querySelector('[data-download-ready]');
+    var downloadTrigger = readyEl && readyEl.querySelector('[data-download-trigger]');
+    var pendingBlob = null;
+    var pendingFilename = null;
+    var progressTimer = null;
 
-    function setLoading(isLoading) {
-      submitButton.disabled = isLoading;
-      if (isLoading) {
-        formRow.hidden = true;
-        progressEl.hidden = false;
-        progressLabel.textContent = _t('download.processing');
-        progressBar.style.animation = 'progressShimmer 1.5s ease infinite';
-        setMessage(_t('download.validating'));
-      } else {
-        formRow.hidden = false;
+    function showProcessing() {
+      submitButton.disabled = true;
+      formRow.hidden = true;
+      progressEl.hidden = false;
+      readyEl.hidden = true;
+      if (message) message.textContent = '';
+      progressLabel.textContent = _t('download.processing');
+      progressBar.style.transition = 'width .4s ease';
+      progressBar.style.width = '0%';
+      progressPct.textContent = '';
+      var pct = 0;
+      progressTimer = setInterval(function () {
+        pct += Math.max(1, Math.round((90 - pct) * 0.08));
+        if (pct >= 90) { pct = 90; clearInterval(progressTimer); }
+        progressBar.style.width = pct + '%';
+        progressPct.textContent = pct + '%';
+      }, 400);
+    }
+
+    function showDownloadReady() {
+      if (progressTimer) { clearInterval(progressTimer); progressTimer = null; }
+      progressBar.style.transition = 'width .2s ease';
+      progressBar.style.width = '100%';
+      progressPct.textContent = '100%';
+      setTimeout(function () {
         progressEl.hidden = true;
-        progressBar.style.animation = 'none';
-        progressBar.style.width = '0%';
-      }
+        readyEl.hidden = false;
+      }, 400);
+    }
+
+    function triggerDownload() {
+      if (!pendingBlob) return;
+      var blobUrl = URL.createObjectURL(pendingBlob);
+      var anchor = document.createElement('a');
+      anchor.href = blobUrl;
+      anchor.download = pendingFilename;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(blobUrl);
+      displaySuccess(pendingFilename);
+      pendingBlob = null;
+      pendingFilename = null;
+      readyEl.hidden = true;
+      formRow.hidden = false;
+      submitButton.disabled = false;
+    }
+
+    function cancelProcessing() {
+      if (progressTimer) { clearInterval(progressTimer); progressTimer = null; }
+      progressEl.hidden = true;
+      readyEl.hidden = true;
+      formRow.hidden = false;
+      submitButton.disabled = false;
     }
 
     function displaySuccess(filename) {
@@ -143,7 +189,7 @@
         return;
       }
 
-      setLoading(true);
+      showProcessing();
 
       try {
         var params = new URLSearchParams({ url: videoUrl, format: format });
@@ -157,27 +203,20 @@
         }
 
         var blob = await response.blob();
-        var filename = filenameFromDisposition(response.headers.get('Content-Disposition'), response.headers.get('Content-Type'));
-        var blobUrl = URL.createObjectURL(blob);
-        var anchor = document.createElement('a');
-        anchor.href = blobUrl;
-        anchor.download = filename;
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
-        URL.revokeObjectURL(blobUrl);
-        displaySuccess(filename);
+        pendingBlob = blob;
+        pendingFilename = filenameFromDisposition(response.headers.get('Content-Disposition'), response.headers.get('Content-Type'));
         urlInput.value = '';
         updatePasteButton(pasteButton, urlInput);
+        showDownloadReady();
       } catch (error) {
+        cancelProcessing();
         setMessage(_t('download.error') + ': ' + error.message, 'error');
-      } finally {
-        setLoading(false);
       }
     }
 
     if (pasteButton) pasteButton.addEventListener('click', pasteFromClipboard);
     form.addEventListener('submit', downloadVideo);
+    if (downloadTrigger) downloadTrigger.addEventListener('click', triggerDownload);
   });
 
   document.addEventListener('localechange', function () {

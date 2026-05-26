@@ -294,17 +294,11 @@ input:focus, select:focus {
   margin-top: 20px;
 }
 
-.progress-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-
-.progress-label {
-  font-weight: 700;
-  font-size: .95rem;
-  color: var(--text);
+.progress-hint {
+  margin: 0 0 16px;
+  color: var(--muted);
+  font-size: .85rem;
+  line-height: 1.5;
 }
 
 .progress-track {
@@ -316,40 +310,52 @@ input:focus, select:focus {
 }
 
 .progress-bar {
-  width: 100%;
+  width: 0%;
   height: 100%;
   border-radius: 999px;
   background: linear-gradient(90deg, var(--brand), var(--ok));
-  background-size: 200% 100%;
-  animation: progressShimmer 1.5s ease infinite;
-  transform-origin: left;
+  transition: width .4s ease;
 }
 
-.progress-hint {
-  margin: 12px 0 0;
-  color: var(--muted);
+.progress-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+.progress-label {
+  font-weight: 700;
+  font-size: .9rem;
+  color: var(--text);
+}
+
+.progress-pct {
+  font-weight: 800;
   font-size: .85rem;
-  line-height: 1.5;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 3ch;
+  text-align: right;
 }
 
-.spinner {
-  display: inline-block;
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(255, 255, 255, .15);
-  border-top-color: var(--brand);
-  border-radius: 50%;
-  animation: spin .6s linear infinite;
-  flex-shrink: 0;
+.download-ready {
+  margin-top: 20px;
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+.download-ready .btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 18px;
+  font-size: 1.05rem;
 }
 
-@keyframes progressShimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+.download-ready .btn::before {
+  content: '\2193';
+  font-size: 1.2em;
 }
 
 .badges,
