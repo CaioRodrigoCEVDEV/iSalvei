@@ -64,7 +64,6 @@
     var progressBar = card.querySelector('[data-progress-bar]');
     var progressPct = card.querySelector('[data-progress-pct]');
     var readyEl = card.querySelector('[data-download-ready]');
-    var downloadTrigger = readyEl && readyEl.querySelector('[data-download-trigger]');
     var pendingBlob = null;
     var pendingFilename = null;
     var progressTimer = null;
@@ -95,7 +94,7 @@
       progressPct.textContent = '100%';
       setTimeout(function () {
         progressEl.hidden = true;
-        readyEl.hidden = false;
+        triggerDownload();
       }, 400);
     }
 
@@ -122,7 +121,6 @@
         displaySuccess(pendingFilename);
         pendingBlob = null;
         pendingFilename = null;
-        readyEl.hidden = true;
         formRow.hidden = false;
         submitButton.disabled = false;
       } catch (error) {
@@ -231,7 +229,6 @@
 
     if (pasteButton) pasteButton.addEventListener('click', pasteFromClipboard);
     form.addEventListener('submit', downloadVideo);
-    if (downloadTrigger) downloadTrigger.addEventListener('click', triggerDownload);
   });
 
   document.addEventListener('localechange', function () {
