@@ -112,25 +112,30 @@
           </div>
         </div>
         <div class="platform-download-grid">
-          <article class="downloader-card" data-download-card>
+          <article class="platform-card" data-download-card>
+            <div class="platform-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.94 2C5.12 20 12 20 12 20s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/>
+                <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="currentColor" stroke="none"/>
+              </svg>
+            </div>
             <p class="eyebrow" data-i18n="opcoes.youtube.eyebrow">\u25b6 YouTube</p>
-            <h3 data-i18n="opcoes.youtube.title">YouTube Shorts</h3>
+            <h3 data-i18n="opcoes.youtube.title">YouTube Shorts / V\u00eddeos</h3>
             <p data-i18n="opcoes.youtube.desc">Cole o link de um Short ou v\u00eddeo do YouTube. Formatos vertical e horizontal suportados.</p>
             <form class="downloader-form" data-download-form>
               <div class="input-group">
                 <input name="url" type="url" inputmode="url" data-i18n-placeholder="opcoes.youtube.placeholder" placeholder="https://youtube.com/shorts/..." autocomplete="off" required>
-                <button class="btn" type="button" data-paste data-i18n="download.paste">Colar link</button>
+                <button class="btn btn-paste" type="button" data-paste data-i18n="download.paste">Colar</button>
               </div>
-              <div class="form-row">
-                <select name="format" data-i18n-aria-label="download.format.aria-label">
-                  <option value="best" data-i18n="download.format.best">Melhor qualidade</option>
-                  <option value="720" data-i18n="download.format.720">At\u00e9 720p</option>
-                  <option value="480" data-i18n="download.format.480">At\u00e9 480p</option>
-                  <option value="audio" data-i18n="download.format.audio">Somente \u00e1udio</option>
-                </select>
-                <button class="btn btn-primary" type="submit" data-i18n="download.submit">Baixar agora</button>
-              </div>
+              <select name="format" class="format-select" data-i18n-aria-label="download.format.aria-label">
+                <option value="best" data-i18n="download.format.best">Melhor qualidade</option>
+                <option value="720" data-i18n="download.format.720">At\u00e9 720p</option>
+                <option value="480" data-i18n="download.format.480">At\u00e9 480p</option>
+                <option value="audio" data-i18n="download.format.audio">Somente \u00e1udio</option>
+              </select>
+              <button class="btn btn-download" type="submit" data-i18n="download.submit">Baixar agora</button>
             </form>
+            <p class="platform-note">MP4, WebM \u00b7 At\u00e9 4K</p>
             <div class="msg" data-message aria-live="polite"></div>
             <div class="download-progress" data-download-progress hidden>
               <p class="progress-hint" data-i18n="download.validating">Validando link e preparando o arquivo. Isso pode levar alguns instantes...</p>
@@ -147,25 +152,31 @@
             </div>
           </article>
 
-          <article class="downloader-card" data-download-card>
+          <article class="platform-card" data-download-card>
+            <div class="platform-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="2" y="2" width="20" height="20" rx="5"/>
+                <circle cx="12" cy="12" r="5"/>
+                <circle cx="17" cy="7" r="1.5" fill="currentColor" stroke="none"/>
+              </svg>
+            </div>
             <p class="eyebrow" data-i18n="opcoes.instagram.eyebrow">\u25ce Instagram</p>
             <h3 data-i18n="opcoes.instagram.title">Instagram Reels / Posts</h3>
             <p data-i18n="opcoes.instagram.desc">Cole o link de um Reel, post ou v\u00eddeo p\u00fablico do Instagram.</p>
             <form class="downloader-form" data-download-form>
               <div class="input-group">
                 <input name="url" type="url" inputmode="url" data-i18n-placeholder="opcoes.instagram.placeholder" placeholder="https://instagram.com/p/..." autocomplete="off" required>
-                <button class="btn" type="button" data-paste data-i18n="download.paste">Colar link</button>
+                <button class="btn btn-paste" type="button" data-paste data-i18n="download.paste">Colar</button>
               </div>
-              <div class="form-row">
-                <select name="format" data-i18n-aria-label="download.format.aria-label">
-                  <option value="best" data-i18n="download.format.best">Melhor qualidade</option>
-                  <option value="720" data-i18n="download.format.720">At\u00e9 720p</option>
-                  <option value="480" data-i18n="download.format.480">At\u00e9 480p</option>
-                  <option value="audio" data-i18n="download.format.audio">Somente \u00e1udio</option>
-                </select>
-                <button class="btn btn-primary" type="submit" data-i18n="download.submit">Baixar agora</button>
-              </div>
+              <select name="format" class="format-select" data-i18n-aria-label="download.format.aria-label">
+                <option value="best" data-i18n="download.format.best">Melhor qualidade</option>
+                <option value="720" data-i18n="download.format.720">At\u00e9 720p</option>
+                <option value="480" data-i18n="download.format.480">At\u00e9 480p</option>
+                <option value="audio" data-i18n="download.format.audio">Somente \u00e1udio</option>
+              </select>
+              <button class="btn btn-download" type="submit" data-i18n="download.submit">Baixar agora</button>
             </form>
+            <p class="platform-note">MP4, WebM \u00b7 At\u00e9 4K</p>
             <div class="msg" data-message aria-live="polite"></div>
             <div class="download-progress" data-download-progress hidden>
               <p class="progress-hint" data-i18n="download.validating">Validando link e preparando o arquivo. Isso pode levar alguns instantes...</p>
@@ -182,25 +193,29 @@
             </div>
           </article>
 
-          <article class="downloader-card" data-download-card>
+          <article class="platform-card" data-download-card>
+            <div class="platform-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 4l16 16M20 4L4 20"/>
+              </svg>
+            </div>
             <p class="eyebrow" data-i18n="opcoes.twitter.eyebrow">\ud835\udd4f X / Twitter</p>
             <h3 data-i18n="opcoes.twitter.title">Posts com m\u00eddia</h3>
             <p data-i18n="opcoes.twitter.desc">Cole o link de um post p\u00fablico do X/Twitter que contenha v\u00eddeo ou imagem.</p>
             <form class="downloader-form" data-download-form>
               <div class="input-group">
                 <input name="url" type="url" inputmode="url" data-i18n-placeholder="opcoes.twitter.placeholder" placeholder="https://x.com/usuario/status/..." autocomplete="off" required>
-                <button class="btn" type="button" data-paste data-i18n="download.paste">Colar link</button>
+                <button class="btn btn-paste" type="button" data-paste data-i18n="download.paste">Colar</button>
               </div>
-              <div class="form-row">
-                <select name="format" data-i18n-aria-label="download.format.aria-label">
-                  <option value="best" data-i18n="download.format.best">Melhor qualidade</option>
-                  <option value="720" data-i18n="download.format.720">At\u00e9 720p</option>
-                  <option value="480" data-i18n="download.format.480">At\u00e9 480p</option>
-                  <option value="audio" data-i18n="download.format.audio">Somente \u00e1udio</option>
-                </select>
-                <button class="btn btn-primary" type="submit" data-i18n="download.submit">Baixar agora</button>
-              </div>
+              <select name="format" class="format-select" data-i18n-aria-label="download.format.aria-label">
+                <option value="best" data-i18n="download.format.best">Melhor qualidade</option>
+                <option value="720" data-i18n="download.format.720">At\u00e9 720p</option>
+                <option value="480" data-i18n="download.format.480">At\u00e9 480p</option>
+                <option value="audio" data-i18n="download.format.audio">Somente \u00e1udio</option>
+              </select>
+              <button class="btn btn-download" type="submit" data-i18n="download.submit">Baixar agora</button>
             </form>
+            <p class="platform-note">MP4, WebM \u00b7 At\u00e9 4K</p>
             <div class="msg" data-message aria-live="polite"></div>
             <div class="download-progress" data-download-progress hidden>
               <p class="progress-hint" data-i18n="download.validating">Validando link e preparando o arquivo. Isso pode levar alguns instantes...</p>
@@ -216,6 +231,9 @@
               <button class="btn btn-primary" data-download-trigger>Baixar agora</button>
             </div>
           </article>
+        </div>
+        <div class="platforms-tip">
+          <p>O sistema aceita qualquer link p\u00fablico de v\u00eddeo das plataformas suportadas. N\u00e3o \u00e9 necess\u00e1rio escolher uma plataforma espec\u00edfica — basta colar o link e clicar em \u201cBaixar agora\u201d.</p>
         </div>
       </div>
     </section>

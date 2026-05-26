@@ -586,6 +586,110 @@ input:focus, select:focus {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── platform cards section ── */
+
+.platform-card {
+  padding: 32px 24px 28px;
+  text-align: center;
+}
+
+.platform-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, .07);
+  border: 1px solid rgba(255, 255, 255, .1);
+}
+
+.platform-icon svg {
+  width: 28px;
+  height: 28px;
+  color: #fff;
+}
+
+.platform-card .eyebrow {
+  margin-bottom: 12px;
+  justify-content: center;
+}
+
+.platform-card h3 {
+  font-size: 1.2rem;
+}
+
+.platform-card > p {
+  margin: 10px 0 0;
+  font-size: .9rem;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.platform-card .downloader-form {
+  margin-top: 20px;
+}
+
+.btn-paste {
+  background: #666;
+  border-color: #666;
+  color: #fff;
+}
+
+.btn-paste:hover {
+  background: #777;
+  border-color: #777;
+  transform: translateY(-2px);
+}
+
+.format-select {
+  width: 100%;
+  background: #444;
+  border-color: #444;
+  color: #fff;
+}
+
+.btn-download {
+  width: 100%;
+  padding: 16px 18px;
+  font-size: 1.05rem;
+  background: #00FFA7;
+  border-color: #00FFA7;
+  color: #0A0A0A;
+  box-shadow: 0 8px 32px rgba(0, 255, 167, .25);
+}
+
+.btn-download:hover {
+  background: #00e090;
+  border-color: #00e090;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 255, 167, .35);
+}
+
+.platform-note {
+  margin-top: 10px;
+  font-size: .78rem;
+  color: var(--muted);
+  opacity: .65;
+  text-align: center;
+}
+
+.platforms-tip {
+  margin-top: 24px;
+  padding: 16px 20px;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, .04);
+  text-align: center;
+}
+
+.platforms-tip p {
+  margin: 0;
+  font-size: .85rem;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
 .notice {
   margin-top: 18px;
   padding: 16px;
@@ -765,6 +869,10 @@ input:focus, select:focus {
   .step-visual { width: 68px; height: 68px; margin-bottom: 20px; }
   .step-icon { width: 28px; height: 28px; }
   .steps-cta { margin-top: 28px; }
+  .platform-card { padding: 24px 20px 26px; }
+  .platform-icon { width: 48px; height: 48px; margin-bottom: 14px; }
+  .platform-icon svg { width: 24px; height: 24px; }
+  .platforms-tip { padding: 14px 16px; margin-top: 20px; }
 }
 
 @media (max-width: 420px) {
