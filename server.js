@@ -26,6 +26,9 @@ const BLOCKED_HOSTS = (process.env.BLOCKED_HOSTS || '').split(',').map(h => h.tr
 // ==============================
 // Serve static frontend/assets FIRST (very important)
 // ==============================
+// Redirect /index.html to root to keep URL limpa
+app.get('/index.html', (req, res) => res.redirect(301, '/'));
+
 app.use(express.static(path.join(__dirname, 'frontend')));
 
 // parse json
@@ -130,12 +133,9 @@ async function downloadToTemp(url, formatArg) {
     baseArgs.push('--cookies', COOKIES_FILE);
   }
 
-  // Instagram: extra args para melhor compatibilidade
+  // Instagram: usar API pública por padrão (funciona para conteúdos públicos)
   if (/instagram\.com/i.test(url)) {
-    baseArgs.push('--extractor-args', 'instagram:api=private');
-    if (!COOKIES_FILE) {
-      console.warn('[yt-dlp] Instagram URL detectada sem COOKIES_FILE — autenticação necessária para mídia privada/restrita');
-    }
+    baseArgs.push('--add-header', 'User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36');
   }
 
   // YouTube: usar extra-args para melhor compatibilidade

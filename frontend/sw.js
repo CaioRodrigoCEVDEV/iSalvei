@@ -1,5 +1,5 @@
 const CACHE_NAME = 'isalvei-v2';
-const OFFLINE_URL = '/index.html';
+const OFFLINE_URL = '/';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',

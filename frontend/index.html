@@ -19,8 +19,9 @@
     <div class="container navbar">
       <a class="logo" href="#!" onclick="event.preventDefault();window.scrollTo({top:0,behavior:'smooth'})" aria-label="iSalvei início"><span class="logo-mark">▶</span> iSalvei</a>
       <nav class="nav-links" aria-label="Navegação principal">
-        <a class="active" href="#!" onclick="event.preventDefault();window.scrollTo({top:0,behavior:'smooth'})">Início</a>
-        <a href="#opcoes">Opções</a>
+        <a class="active" href="#!" data-nav="inicio">Início</a>
+        <a href="#opcoes" data-nav="opcoes">Opções</a>
+        <a href="#como-funciona" data-nav="como-funciona">Como funciona</a>
       </nav>
     </div>
   </header>
@@ -103,7 +104,6 @@
             <p class="eyebrow">◎ Instagram</p>
             <h3>Instagram Reels / Posts</h3>
             <p>Cole o link de um Reel, post ou vídeo público do Instagram.</p>
-            <div class="notice" style="margin-top:0;margin-bottom:14px;font-size:.88rem">Requer cookies do Instagram configurados no servidor via <code>COOKIES_FILE</code>.</div>
             <form class="downloader-form" data-download-form>
               <div class="input-group">
                 <input name="url" type="url" inputmode="url" placeholder="https://instagram.com/p/..." autocomplete="off" required>
@@ -147,7 +147,7 @@
       </div>
     </section>
 
-    <section class="section">
+    <section class="section" id="como-funciona">
       <div class="container">
         <div class="section-head">
           <div>
@@ -164,18 +164,27 @@
       </div>
     </section>
 
-
   </main>
 
   <footer class="footer">
     <div class="container footer-inner">
       <span>© 2026 iSalvei</span>
-      <span>Contato: contato@isalvei.com.br</span>
+      <span>Feito com <span style="color:var(--danger)">♥</span> para a comunidade</span>
     </div>
   </footer>
 
   <script src="script.js?v=2.0.0"></script>
   <script>
+    document.querySelectorAll('[data-nav]').forEach(function(link) {
+      link.addEventListener('click', function(e) {
+        if (this.getAttribute('data-nav') === 'inicio') {
+          e.preventDefault();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        document.querySelectorAll('[data-nav]').forEach(function(l) { l.classList.remove('active'); });
+        this.classList.add('active');
+      });
+    });
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(console.error);
     }
