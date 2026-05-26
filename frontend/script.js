@@ -1,4 +1,28 @@
 (function () {
+  let deferredPrompt = null;
+  const installBtn = document.getElementById('installApp');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (installBtn) installBtn.hidden = false;
+  });
+
+  if (installBtn) {
+    installBtn.addEventListener('click', async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      const result = await deferredPrompt.userChoice;
+      if (result.outcome === 'accepted') installBtn.hidden = true;
+      deferredPrompt = null;
+    });
+  }
+
+  window.addEventListener('appinstalled', () => {
+    if (installBtn) installBtn.hidden = true;
+    deferredPrompt = null;
+  });
+
   function filenameFromDisposition(disposition, contentType) {
     const utf = disposition && disposition.match(/filename\*=UTF-8''([^;]+)/i);
     const ascii = disposition && disposition.match(/filename="?([^";]+)"?/i);

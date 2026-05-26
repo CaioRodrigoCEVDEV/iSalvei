@@ -185,6 +185,16 @@ h3 { font-size: 1.22rem; }
 
 .btn-primary:hover { background: linear-gradient(135deg, #75e0ff, #5ff0b8); }
 
+.btn-install {
+  font-size: .82rem;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--brand), var(--brand-2));
+  color: #fff;
+  border-color: transparent;
+  white-space: nowrap;
+}
+
 .btn:disabled {
   cursor: wait;
   opacity: .7;
