@@ -51,40 +51,39 @@
   <main>
     <section class="hero">
       <div class="container hero-grid">
-        <div>
-          <p class="eyebrow" data-i18n="hero.eyebrow">\u26a1 Downloads com rate limit e retry</p>
-          <h1 data-i18n="hero.title">Salve v\u00eddeos p\u00fablicos sem complica\u00e7\u00e3o.</h1>
-          <p class="lead" data-i18n="hero.desc">O iSalvei foi refatorado para aceitar links p\u00fablicos de muitas plataformas suportadas pelo yt-dlp \u2014 n\u00e3o apenas X, Instagram e YouTube \u2014 mantendo limites por IP para proteger o servi\u00e7o.</p>
+        <div class="hero-content">
+          <p class="eyebrow" data-i18n="hero.eyebrow">iSalvei</p>
+          <h1 class="hero-title" data-i18n="hero.title">Cole. Baixe. Pronto.</h1>
+          <p class="lead" data-i18n="hero.desc">Links públicos de YouTube, Instagram, X e centenas de plataformas.<br>Processamento em segundos com proteção automática por IP.</p>
           <div class="actions">
-            <a class="btn btn-primary" href="#download" data-i18n="hero.cta-primary">Come\u00e7ar agora</a>
-            <a class="btn" href="#opcoes" data-i18n="hero.cta-secondary">Ver op\u00e7\u00f5es</a>
+            <a class="btn btn-primary" href="#download" data-i18n="hero.cta-primary">Baixar vídeo</a>
+            <a class="btn" href="#opcoes" data-i18n="hero.cta-secondary">Ver plataformas</a>
           </div>
-
         </div>
 
         <section class="downloader-card" aria-labelledby="quick-download-title" id="download" data-download-card>
-          <p class="eyebrow" data-i18n="download.eyebrow">Download r\u00e1pido</p>
+          <p class="eyebrow" data-i18n="download.eyebrow">Multi-plataforma</p>
           <h2 id="quick-download-title" data-i18n="download.title">Cole seu link</h2>
-          <p class="lead" data-i18n="download.desc">Use v\u00eddeos p\u00fablicos e respeite direitos autorais e termos da plataforma de origem.</p>
+          <p class="lead" data-i18n="download.desc">YouTube, Instagram, X e centenas de plataformas.<br>Vídeos públicos e direitos autorais respeitados.</p>
           <form class="downloader-form" data-download-form>
             <div class="input-group">
-              <input name="url" type="url" inputmode="url" data-i18n-placeholder="download.placeholder" placeholder="https://exemplo.com/video..." autocomplete="off" required>
-              <button class="btn" type="button" data-paste data-i18n="download.paste">Colar link</button>
+              <input name="url" type="url" inputmode="url" data-i18n-placeholder="download.placeholder" placeholder="Cole o link público do vídeo..." autocomplete="off" required>
+              <button class="btn" type="button" data-paste data-i18n="download.paste">Colar</button>
             </div>
             <div class="form-row">
               <select name="format" data-i18n-aria-label="download.format.aria-label">
                 <option value="best" data-i18n="download.format.best">Melhor qualidade</option>
-                <option value="720" data-i18n="download.format.720">At\u00e9 720p</option>
-                <option value="480" data-i18n="download.format.480">At\u00e9 480p</option>
-                <option value="audio" data-i18n="download.format.audio">Somente \u00e1udio</option>
+                <option value="720" data-i18n="download.format.720">Até 720p</option>
+                <option value="480" data-i18n="download.format.480">Até 480p</option>
+                <option value="audio" data-i18n="download.format.audio">Somente áudio</option>
               </select>
               <button class="btn btn-primary" type="submit" data-i18n="download.submit">Baixar agora</button>
             </div>
           </form>
           <div class="msg" data-message aria-live="polite"></div>
           <div class="badges">
-            <div class="badge"><strong data-i18n="download.badge1.title">Formatos flex\u00edveis</strong><span data-i18n="download.badge1.desc">V\u00eddeo completo ou \u00e1udio.</span></div>
-            <div class="badge"><strong data-i18n="download.badge2.title">Prote\u00e7\u00e3o autom\u00e1tica</strong><span data-i18n="download.badge2.desc">Rate limit e backoff no servidor.</span></div>
+            <div class="badge"><strong data-i18n="download.badge1.title">Multi-plataforma</strong><span data-i18n="download.badge1.desc">YouTube, Instagram, X e muito mais.</span></div>
+            <div class="badge"><strong data-i18n="download.badge2.title">Proteção inteligente</strong><span data-i18n="download.badge2.desc">Rate limit e backoff automáticos.</span></div>
           </div>
         </section>
       </div>
