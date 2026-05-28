@@ -21,6 +21,8 @@ const YTDLP_INITIAL_BACKOFF = Number(process.env.YTDLP_INITIAL_BACKOFF || 2000);
 const TMP_DIR = process.env.TMP_DIR || undefined;
 const COOKIES_FILE = process.env.COOKIES_FILE || '';
 const YTDLP_PATH = process.env.YTDLP_PATH || 'yt-dlp'; // use '/usr/local/bin/yt-dlp' no servidor se precisar
+const FFMPEG_PATH = process.env.FFMPEG_PATH || 'ffmpeg';
+const INSTAGRAM_USER_AGENT = process.env.INSTAGRAM_USER_AGENT || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
 const BLOCKED_HOSTS = (process.env.BLOCKED_HOSTS || '').split(',').map(h => h.trim().toLowerCase()).filter(Boolean);
 const MAX_VIDEO_DURATION = Number(process.env.MAX_VIDEO_DURATION || 600); // segundos (padrão: 10 min)
 const MAX_FILE_SIZE = Number(process.env.MAX_FILE_SIZE || 100 * 1024 * 1024); // bytes (padrão: 100MB)
@@ -83,16 +85,16 @@ function isAllowedUrl(u) {
 
 function mapFormatToYtDlp(format, url) {
   const isInstagram = url && /instagram\.com/i.test(url);
-  const mp4Fallback = '[ext=mp4]/';
 
-  // Instagram: preferir MP4 com H.264 para compatibilidade com WhatsApp
+  // Instagram entrega Reels/posts principalmente como MP4 progressivo.
+  // Seletores bestvideo+bestaudio quebram em muitos casos porque nao ha faixas separadas.
   if (isInstagram) {
     switch (String(format || 'best')) {
-      case '720': return `bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=720]+bestaudio/best[height<=720]${mp4Fallback}best`;
-      case '480': return `bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<=480]+bestaudio/best[height<=480]${mp4Fallback}best`;
+      case '720': return 'best[height<=720][ext=mp4]/best[height<=720]/best[ext=mp4]/best';
+      case '480': return 'best[height<=480][ext=mp4]/best[height<=480]/best[ext=mp4]/best';
       case 'audio': return 'bestaudio/best';
       case 'best':
-      default: return `bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio${mp4Fallback}best`;
+      default: return 'best[ext=mp4]/best';
     }
   }
 
@@ -102,6 +104,24 @@ function mapFormatToYtDlp(format, url) {
     case 'audio': return 'bestaudio/best';
     case 'best':
     default: return `bestvideo+bestaudio/best`;
+  }
+}
+
+function appendCommonYtDlpArgs(args, url) {
+  if (COOKIES_FILE) {
+    args.push('--cookies', COOKIES_FILE);
+  }
+
+  if (/instagram\.com/i.test(url)) {
+    args.push(
+      '--user-agent', INSTAGRAM_USER_AGENT,
+      '--add-header', 'Accept-Language:pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+      '--extractor-retries', '3'
+    );
+  }
+
+  if (/youtube\.com/i.test(url)) {
+    args.push('--extractor-args', 'youtube:player-client=web,android');
   }
 }
 
@@ -117,17 +137,7 @@ async function getVideoMetadata(url, formatArg) {
     '--no-warnings',
   ];
 
-  if (COOKIES_FILE) {
-    args.push('--cookies', COOKIES_FILE);
-  }
-
-  if (/instagram\.com/i.test(url)) {
-    args.push('--add-header', 'User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36');
-  }
-
-  if (/youtube\.com/i.test(url)) {
-    args.push('--extractor-args', 'youtube:player-client=web,android');
-  }
+  appendCommonYtDlpArgs(args, url);
 
   return new Promise((resolve, reject) => {
     let stdout = '';
@@ -142,8 +152,9 @@ async function getVideoMetadata(url, formatArg) {
         return;
       }
       try {
-        const firstLine = stdout.split('\n')[0];
-        const metadata = JSON.parse(firstLine);
+        const jsonLine = stdout.split('\n').find(line => line.trim().startsWith('{'));
+        if (!jsonLine) throw new Error('yt-dlp did not return JSON metadata');
+        const metadata = JSON.parse(jsonLine);
         resolve(metadata);
       } catch (err) {
         reject(new Error('Failed to parse metadata JSON: ' + err.message));
@@ -180,13 +191,67 @@ function validateVideo(metadata) {
   }
 }
 
+function getTargetVideoHeight(format) {
+  const value = String(format || 'best');
+  if (value === '720') return 720;
+  if (value === '480') return 480;
+  return null;
+}
+
+function runProcess(command, args, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    let stderr = '';
+    let finished = false;
+    const child = spawn(command, args, { stdio: ['ignore', 'ignore', 'pipe'] });
+    const timeout = setTimeout(() => {
+      if (!finished) {
+        try { child.kill('SIGKILL'); } catch (_) {}
+      }
+    }, timeoutMs);
+
+    child.stderr.on('data', d => { stderr += d.toString(); });
+    child.on('error', err => {
+      finished = true;
+      clearTimeout(timeout);
+      reject(new Error('Failed to start ' + command + ': ' + err.message));
+    });
+    child.on('close', code => {
+      finished = true;
+      clearTimeout(timeout);
+      if (code === 0) return resolve();
+      reject(new Error(command + ' exited with code ' + code + '. ' + stderr.slice(0, 500)));
+    });
+  });
+}
+
+async function enforceSelectedQuality(filePath, format) {
+  const targetHeight = getTargetVideoHeight(format);
+  if (!targetHeight) return filePath;
+
+  const parsed = path.parse(filePath);
+  const outputPath = path.join(parsed.dir, parsed.name + '-' + targetHeight + 'p.mp4');
+  const scaleFilter = 'scale=trunc(iw*min(1\\,' + targetHeight + '/ih)/2)*2:trunc(ih*min(1\\,' + targetHeight + '/ih)/2)*2';
+
+  await runProcess(FFMPEG_PATH, [
+    '-y',
+    '-i', filePath,
+    '-vf', scaleFilter,
+    '-c:v', 'libx264',
+    '-preset', 'veryfast',
+    '-crf', targetHeight === 480 ? '28' : '25',
+    '-c:a', 'aac',
+    '-b:a', '128k',
+    '-movflags', '+faststart',
+    outputPath
+  ], YTDLP_TIMEOUT);
+
+  return outputPath;
+}
 // ==============================
 // Download helper using yt-dlp with retries/backoff
 // ==============================
 async function downloadToTemp(url, formatArg) {
-  // cria arquivo temporário pra determinar diretório de saída
-  const { path: tmpPath, cleanup: cleanupTmpFile } = await tmp.file({ postfix: '.tmp', discardDescriptor: true, dir: TMP_DIR });
-  const tmpDir = path.dirname(tmpPath);
+  const { path: tmpDir, cleanup: cleanupTmpDir } = await tmp.dir({ unsafeCleanup: true, dir: TMP_DIR });
   const outTemplate = path.join(tmpDir, '%(title)s.%(ext)s');
 
   // args base (SEM --no-call-home)
@@ -206,27 +271,13 @@ async function downloadToTemp(url, formatArg) {
     '--merge-output-format', 'mp4'
   ];
 
-  if (COOKIES_FILE) {
-    baseArgs.push('--cookies', COOKIES_FILE);
-  }
-
-  // Instagram: usar API pública por padrão (funciona para conteúdos públicos)
-  if (/instagram\.com/i.test(url)) {
-    baseArgs.push('--add-header', 'User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36');
-  }
-
-  // YouTube: usar extra-args para melhor compatibilidade
-  if (/youtube\.com/i.test(url)) {
-    baseArgs.push('--extractor-args', 'youtube:player-client=web,android');
-  }
+  appendCommonYtDlpArgs(baseArgs, url);
 
   let attempt = 0;
   let backoffMs = YTDLP_INITIAL_BACKOFF;
 
-  // garante cleanup do tmpPath caso algo dê errado
   const cleanupAll = () => {
-    try { fs.unlinkSync(tmpPath); } catch(_) {}
-    try { cleanupTmpFile(); } catch(_) {}
+    try { cleanupTmpDir(); } catch(_) {}
   };
 
   while (attempt < YTDLP_MAX_ATTEMPTS) {
@@ -282,18 +333,22 @@ async function downloadToTemp(url, formatArg) {
       // sucesso: encontra o arquivo mais recente no tmpDir
       try {
         const files = fs.readdirSync(tmpDir)
-          .map(f => ({ f, m: fs.statSync(path.join(tmpDir,f)).mtimeMs }))
+          .map(f => {
+            const filePath = path.join(tmpDir, f);
+            const stat = fs.statSync(filePath);
+            return { f, filePath, stat, m: stat.mtimeMs };
+          })
+          .filter(file => file.stat.isFile() && file.stat.size > 0 && !file.f.endsWith('.part') && !file.f.endsWith('.ytdl'))
           .sort((a,b) => b.m - a.m);
         if (!files.length) {
           cleanupAll();
           throw new Error('No file produced by yt-dlp');
         }
-        const filePath = path.join(tmpDir, files[0].f);
+        const filePath = await enforceSelectedQuality(files[0].filePath, formatArg);
         // retornamos filePath e função cleanup para o caller
         return {
           filePath,
           cleanup: () => {
-            try { fs.unlinkSync(filePath); } catch(_) {}
             cleanupAll();
           }
         };

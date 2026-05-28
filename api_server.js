@@ -14,6 +14,8 @@ const YTDLP_TIMEOUT = Number(process.env.YTDLP_TIMEOUT || 120000);
 const TMP_DIR = process.env.TMP_DIR || undefined;
 const COOKIES_FILE = process.env.COOKIES_FILE || '';
 const YTDLP_PATH = process.env.YTDLP_PATH || 'yt-dlp';
+const FFMPEG_PATH = process.env.FFMPEG_PATH || 'ffmpeg';
+const INSTAGRAM_USER_AGENT = process.env.INSTAGRAM_USER_AGENT || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
 const BLOCKED_HOSTS = (process.env.BLOCKED_HOSTS || '').split(',').map(h => h.trim().toLowerCase()).filter(Boolean);
 const MAX_VIDEO_DURATION = Number(process.env.MAX_VIDEO_DURATION || 600);
 const MAX_FILE_SIZE = Number(process.env.MAX_FILE_SIZE || 100 * 1024 * 1024);
@@ -41,13 +43,39 @@ db.exec(`
 `);
 
 // helper functions
-function mapFormatToYtDlp(format){
-  // friendly format names to yt-dlp format selectors
-  switch(String(format)){
+function mapFormatToYtDlp(format, url){
+  const isInstagram = url && /instagram\.com/i.test(url);
+
+  if (isInstagram) {
+    switch(String(format || 'best')){
+      case '720': return 'best[height<=720][ext=mp4]/best[height<=720]/best[ext=mp4]/best';
+      case '480': return 'best[height<=480][ext=mp4]/best[height<=480]/best[ext=mp4]/best';
+      case 'audio': return 'bestaudio/best';
+      default: return 'best[ext=mp4]/best';
+    }
+  }
+
+  switch(String(format || 'best')){
     case '720': return 'bestvideo[height<=720]+bestaudio/best[height<=720]/best';
     case '480': return 'bestvideo[height<=480]+bestaudio/best[height<=480]/best';
     case 'audio': return 'bestaudio/best';
     default: return 'bestvideo+bestaudio/best';
+  }
+}
+
+function appendCommonYtDlpArgs(args, url) {
+  if (COOKIES_FILE) args.push('--cookies', COOKIES_FILE);
+
+  if (/instagram\.com/i.test(url)) {
+    args.push(
+      '--user-agent', INSTAGRAM_USER_AGENT,
+      '--add-header', 'Accept-Language:pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
+      '--extractor-retries', '3'
+    );
+  }
+
+  if (/youtube\.com/i.test(url)) {
+    args.push('--extractor-args', 'youtube:player-client=web,android');
   }
 }
 
@@ -56,19 +84,11 @@ async function getVideoMetadata(url, formatArg) {
     url,
     '--dump-json',
     '--no-playlist',
-    '-f', mapFormatToYtDlp(formatArg),
+    '-f', mapFormatToYtDlp(formatArg, url),
     '--no-warnings',
   ];
 
-  if (COOKIES_FILE) args.push('--cookies', COOKIES_FILE);
-
-  if (/instagram\.com/i.test(url)) {
-    args.push('--add-header', 'User-Agent:Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36');
-  }
-
-  if (/youtube\.com/i.test(url)) {
-    args.push('--extractor-args', 'youtube:player-client=web,android');
-  }
+  appendCommonYtDlpArgs(args, url);
 
   return new Promise((resolve, reject) => {
     let stdout = '';
@@ -83,8 +103,9 @@ async function getVideoMetadata(url, formatArg) {
         return;
       }
       try {
-        const firstLine = stdout.split('\n')[0];
-        const metadata = JSON.parse(firstLine);
+        const jsonLine = stdout.split('\n').find(line => line.trim().startsWith('{'));
+        if (!jsonLine) throw new Error('yt-dlp did not return JSON metadata');
+        const metadata = JSON.parse(jsonLine);
         resolve(metadata);
       } catch (err) {
         reject(new Error('Failed to parse metadata JSON: ' + err.message));
@@ -118,6 +139,62 @@ function validateVideo(metadata) {
   }
 }
 
+function getTargetVideoHeight(format) {
+  const value = String(format || 'best');
+  if (value === '720') return 720;
+  if (value === '480') return 480;
+  return null;
+}
+
+function runProcess(command, args, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    let stderr = '';
+    let finished = false;
+    const child = spawn(command, args, { stdio: ['ignore', 'ignore', 'pipe'] });
+    const timeout = setTimeout(() => {
+      if (!finished) {
+        try { child.kill('SIGKILL'); } catch (_) {}
+      }
+    }, timeoutMs);
+
+    child.stderr.on('data', d => { stderr += d.toString(); });
+    child.on('error', err => {
+      finished = true;
+      clearTimeout(timeout);
+      reject(new Error('Failed to start ' + command + ': ' + err.message));
+    });
+    child.on('close', code => {
+      finished = true;
+      clearTimeout(timeout);
+      if (code === 0) return resolve();
+      reject(new Error(command + ' exited with code ' + code + '. ' + stderr.slice(0, 500)));
+    });
+  });
+}
+
+async function enforceSelectedQuality(filePath, format) {
+  const targetHeight = getTargetVideoHeight(format);
+  if (!targetHeight) return filePath;
+
+  const parsed = path.parse(filePath);
+  const outputPath = path.join(parsed.dir, parsed.name + '-' + targetHeight + 'p.mp4');
+  const scaleFilter = 'scale=trunc(iw*min(1\\,' + targetHeight + '/ih)/2)*2:trunc(ih*min(1\\,' + targetHeight + '/ih)/2)*2';
+
+  await runProcess(FFMPEG_PATH, [
+    '-y',
+    '-i', filePath,
+    '-vf', scaleFilter,
+    '-c:v', 'libx264',
+    '-preset', 'veryfast',
+    '-crf', targetHeight === 480 ? '28' : '25',
+    '-c:a', 'aac',
+    '-b:a', '128k',
+    '-movflags', '+faststart',
+    outputPath
+  ], YTDLP_TIMEOUT);
+
+  return outputPath;
+}
 function createApiKey(quota=10){
   const key = uuidv4().replace(/-/g,'');
   const stmt = db.prepare('INSERT INTO api_keys (api_key, created_at, quota_per_minute) VALUES (?, ?, ?)');
@@ -168,11 +245,10 @@ function isAllowedUrl(u){
 }
 
 async function downloadToTemp(url, format){
-  const { path: tmpPath, cleanup } = await tmp.file({ postfix: '.tmp', discardDescriptor: true, dir: TMP_DIR });
-  const tmpDir = path.dirname(tmpPath);
+  const { path: tmpDir, cleanup } = await tmp.dir({ unsafeCleanup: true, dir: TMP_DIR });
   const outTemplate = path.join(tmpDir, '%(title)s.%(ext)s');
 
-  const fmt = mapFormatToYtDlp(format);
+  const fmt = mapFormatToYtDlp(format, url);
 
   const args = [
     url,
@@ -186,25 +262,50 @@ async function downloadToTemp(url, format){
     '--fragment-retries', '10',
     '--sleep-requests', '2',
     '--sleep-interval', '3',
-    '--max-sleep-interval', '8'
+    '--max-sleep-interval', '8',
+    '--merge-output-format', 'mp4'
   ];
-  if (COOKIES_FILE) args.push('--cookies', COOKIES_FILE);
+  appendCommonYtDlpArgs(args, url);
 
   return new Promise((resolve, reject) => {
+    const fail = (err) => {
+      try { cleanup(); } catch (_) {}
+      reject(err);
+    };
+    let timeout;
     const child = spawn(YTDLP_PATH, args);
     let stderr = '';
+    let finished = false;
     child.stderr.on('data', d => stderr += d.toString());
-    child.on('error', err => reject(new Error('Failed to start yt-dlp: ' + err.message)));
-    child.on('close', code => {
-      if (code !== 0) return reject(new Error('yt-dlp exited with code ' + code + ' - ' + stderr.slice(0,300)));
-      try {
-        const files = fs.readdirSync(tmpDir).map(f => ({ f, m: fs.statSync(path.join(tmpDir,f)).mtimeMs })).sort((a,b) => b.m - a.m);
-        if(!files.length) return reject(new Error('No file produced by yt-dlp'));
-        const filePath = path.join(tmpDir, files[0].f);
-        resolve({ filePath, cleanup: () => { try{ fs.unlinkSync(filePath);}catch(_){}; try{ fs.unlinkSync(tmpPath);}catch(_){} }});
-      } catch(err) { reject(err); }
+    child.on('error', err => {
+      finished = true;
+      clearTimeout(timeout);
+      fail(new Error('Failed to start yt-dlp: ' + err.message));
     });
-    setTimeout(() => { try{ child.kill('SIGKILL'); }catch(e){} }, YTDLP_TIMEOUT);
+    child.on('close', code => {
+      finished = true;
+      clearTimeout(timeout);
+      if (code !== 0) return fail(new Error('yt-dlp exited with code ' + code + ' - ' + stderr.slice(0,300)));
+      try {
+        const files = fs.readdirSync(tmpDir)
+          .map(f => {
+            const filePath = path.join(tmpDir, f);
+            const stat = fs.statSync(filePath);
+            return { f, filePath, stat, m: stat.mtimeMs };
+          })
+          .filter(file => file.stat.isFile() && file.stat.size > 0 && !file.f.endsWith('.part') && !file.f.endsWith('.ytdl'))
+          .sort((a,b) => b.m - a.m);
+        if(!files.length) return fail(new Error('No file produced by yt-dlp'));
+        enforceSelectedQuality(files[0].filePath, format)
+          .then(filePath => resolve({ filePath, cleanup }))
+          .catch(fail);
+      } catch(err) { fail(err); }
+    });
+    timeout = setTimeout(() => {
+      if (!finished) {
+        try{ child.kill('SIGKILL'); }catch(e){}
+      }
+    }, YTDLP_TIMEOUT);
   });
 }
 
