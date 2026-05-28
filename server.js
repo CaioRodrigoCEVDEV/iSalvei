@@ -125,6 +125,68 @@ function appendCommonYtDlpArgs(args, url) {
   }
 }
 
+function createHttpError(message, statusCode) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+}
+
+function classifyYtDlpError(stderr) {
+  const stderrLower = String(stderr || '').toLowerCase();
+
+  if (/deprecated feature:.*--no-call-home/i.test(stderr)) {
+    return {
+      type: 'deprecatedFlag',
+      retryable: false,
+      statusCode: 500,
+      message: 'yt-dlp: deprecated flag --no-call-home detected in config/output. Remova essa flag das configs do yt-dlp.'
+    };
+  }
+
+  if (/rate[- ]?limi|too many requests|429\b|limit reached/i.test(stderrLower)) {
+    return {
+      type: 'rateLimit',
+      retryable: true,
+      statusCode: 429,
+      message: 'Instagram limitou temporariamente as requisições deste servidor. Tente novamente em alguns minutos.'
+    };
+  }
+
+  if (/403|401/.test(stderrLower)) {
+    return {
+      type: 'auth',
+      retryable: false,
+      statusCode: 403,
+      message: 'O conteúdo exige autenticação ou cookies válidos para ser acessado.'
+    };
+  }
+
+  if (/private profile/i.test(stderrLower) || /this content is private/i.test(stderrLower)) {
+    return {
+      type: 'private',
+      retryable: false,
+      statusCode: 403,
+      message: 'O conteúdo é privado ou exige autenticação.'
+    };
+  }
+
+  if (/requested content is not available/i.test(stderrLower) || /error: \[instagram\].*requested content is not available/i.test(stderrLower)) {
+    return {
+      type: 'notAvailable',
+      retryable: false,
+      statusCode: 404,
+      message: 'O conteúdo solicitado não está disponível publicamente.'
+    };
+  }
+
+  return {
+    type: 'unknown',
+    retryable: true,
+    statusCode: 500,
+    message: 'Falha ao obter o vídeo.'
+  };
+}
+
 // ==============================
 // Video metadata extraction
 // ==============================
@@ -139,29 +201,64 @@ async function getVideoMetadata(url, formatArg) {
 
   appendCommonYtDlpArgs(args, url);
 
-  return new Promise((resolve, reject) => {
-    let stdout = '';
-    let stderr = '';
-    const child = spawn(YTDLP_PATH, args, { stdio: ['ignore', 'pipe', 'pipe'] });
-    child.stdout.on('data', d => { stdout += d.toString(); });
-    child.stderr.on('data', d => { stderr += d.toString(); });
-    child.on('error', err => reject(new Error('Failed to start yt-dlp: ' + err.message)));
-    child.on('close', code => {
-      if (code !== 0) {
-        reject(new Error('Falha ao obter metadados do vídeo. ' + stderr.slice(0, 300)));
-        return;
-      }
-      try {
-        const jsonLine = stdout.split('\n').find(line => line.trim().startsWith('{'));
-        if (!jsonLine) throw new Error('yt-dlp did not return JSON metadata');
-        const metadata = JSON.parse(jsonLine);
-        resolve(metadata);
-      } catch (err) {
-        reject(new Error('Failed to parse metadata JSON: ' + err.message));
-      }
-    });
-    setTimeout(() => { try { child.kill('SIGKILL'); } catch (e) {} }, YTDLP_TIMEOUT);
-  });
+  let attempt = 0;
+  let backoffMs = YTDLP_INITIAL_BACKOFF;
+  let lastError;
+
+  while (attempt < YTDLP_MAX_ATTEMPTS) {
+    attempt++;
+
+    try {
+      return await new Promise((resolve, reject) => {
+        let stdout = '';
+        let stderr = '';
+        let finished = false;
+        const child = spawn(YTDLP_PATH, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+        const timeout = setTimeout(() => {
+          if (!finished) {
+            try { child.kill('SIGKILL'); } catch (e) {}
+          }
+        }, YTDLP_TIMEOUT);
+
+        child.stdout.on('data', d => { stdout += d.toString(); });
+        child.stderr.on('data', d => { stderr += d.toString(); });
+        child.on('error', err => {
+          finished = true;
+          clearTimeout(timeout);
+          reject(new Error('Failed to start yt-dlp: ' + err.message));
+        });
+        child.on('close', code => {
+          finished = true;
+          clearTimeout(timeout);
+          if (code !== 0) {
+            const classified = classifyYtDlpError(stderr);
+            const error = createHttpError(classified.message, classified.statusCode);
+            error.retryable = classified.retryable;
+            error.type = classified.type;
+            error.details = stderr.slice(0, 300);
+            reject(error);
+            return;
+          }
+          try {
+            const jsonLine = stdout.split('\n').find(line => line.trim().startsWith('{'));
+            if (!jsonLine) throw new Error('yt-dlp did not return JSON metadata');
+            const metadata = JSON.parse(jsonLine);
+            resolve(metadata);
+          } catch (err) {
+            reject(new Error('Failed to parse metadata JSON: ' + err.message));
+          }
+        });
+      });
+    } catch (err) {
+      lastError = err;
+      if (!err.retryable || attempt >= YTDLP_MAX_ATTEMPTS) throw err;
+      console.warn(`[yt-dlp] metadata attempt ${attempt}/${YTDLP_MAX_ATTEMPTS} failed (${err.type || 'unknown'}). Retrying after ${backoffMs}ms.`);
+      await sleep(backoffMs);
+      backoffMs *= 2;
+    }
+  }
+
+  throw lastError || createHttpError('Falha ao obter metadados do vídeo.', 500);
 }
 
 // ==============================
@@ -316,17 +413,12 @@ async function downloadToTemp(url, formatArg) {
     });
 
     // diagnóstico
-    const stderrLower = stderr.toLowerCase();
-    const isDeprecatedFlag = /deprecated feature:.*--no-call-home/i.test(stderr);
-    const isRateLimit = /rate[- ]?limi|too many requests|429\b|limit reached/i.test(stderrLower);
-    const isNotAvailable = /requested content is not available/i.test(stderr) || /error: \[instagram\].*requested content is not available/i.test(stderrLower);
-    const isPrivate = /private profile/i.test(stderrLower) || /This content is private/i.test(stderr);
-    const is403or401 = /403|401/.test(stderr);
+    const classifiedError = classifyYtDlpError(stderr);
 
-    if (isDeprecatedFlag) {
+    if (classifiedError.type === 'deprecatedFlag') {
       // mensagem clara sobre remoção de flag --no-call-home
       cleanupAll();
-      throw new Error('yt-dlp: deprecated flag --no-call-home detected in config/output. Remova essa flag das configs do yt-dlp.');
+      throw createHttpError(classifiedError.message, classifiedError.statusCode);
     }
 
     if (exitCode === 0) {
@@ -359,22 +451,25 @@ async function downloadToTemp(url, formatArg) {
     }
 
     // Erros fatais que não fazem sentido continuar tentando
-    if (isNotAvailable || isPrivate) {
+    if (classifiedError.type === 'notAvailable' || classifiedError.type === 'private') {
       cleanupAll();
-      throw new Error('Requested content is not available or is private. ' + stderr.slice(0,300));
+      throw createHttpError(classifiedError.message, classifiedError.statusCode);
     }
 
     // 401/403 provavelmente necessitam de autenticação (cookies/user)
-    if (is403or401) {
+    if (classifiedError.type === 'auth') {
       console.warn('[yt-dlp] servidor retornou 401/403 — verifique autenticação (cookies). Aborting retries.');
       cleanupAll();
-      throw new Error('Authentication error (401/403). Use cookies or login for protected content. ' + stderr.slice(0,300));
+      throw createHttpError(classifiedError.message, classifiedError.statusCode);
     }
 
     // Se detectamos rate-limit -> backoff e retry
-    if (isRateLimit) {
+    if (classifiedError.type === 'rateLimit') {
       console.warn(`[yt-dlp] detected rate-limit on attempt ${attempt}. stderr snippet: ${stderr.slice(0,200)}`);
-      if (attempt >= YTDLP_MAX_ATTEMPTS) break;
+      if (attempt >= YTDLP_MAX_ATTEMPTS) {
+        cleanupAll();
+        throw createHttpError(classifiedError.message, classifiedError.statusCode);
+      }
       await sleep(backoffMs);
       backoffMs *= 2;
       continue;
@@ -389,7 +484,7 @@ async function downloadToTemp(url, formatArg) {
 
   // se chegou aqui, falhou todas as tentativas
   cleanupAll();
-  throw new Error('yt-dlp failed after max attempts');
+  throw createHttpError('yt-dlp failed after max attempts', 500);
 }
 
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
@@ -441,8 +536,8 @@ app.get('/download', apiLimiter, async (req, res) => {
     stream.on('error', (err) => { try{ cleanup(); } catch(_){}; console.error('Stream error', err); if(!res.headersSent) res.status(500).json({ error: 'Stream error' }); });
   } catch (err) {
     console.error('Download error', err);
-    const statusCode = err.message.includes('Vídeo muito longo') || err.message.includes('Arquivo muito grande') ? 400 : 500;
-    res.status(statusCode).json({ error: err.message.includes('Vídeo muito longo') || err.message.includes('Arquivo muito grande') ? err.message : 'Failed to download', details: statusCode === 500 ? err.message : undefined });
+    const statusCode = err.statusCode || (err.message.includes('Vídeo muito longo') || err.message.includes('Arquivo muito grande') ? 400 : 500);
+    res.status(statusCode).json({ error: statusCode < 500 ? err.message : 'Failed to download', details: statusCode === 500 ? err.message : undefined });
   }
 });
 
@@ -467,8 +562,8 @@ app.get('/api/download', apiLimiter, async (req, res) => {
     stream.on('error', (err) => { try{ cleanup(); } catch(_){}; console.error('Stream error', err); if(!res.headersSent) res.status(500).json({ error: 'Stream error' }); });
   } catch (err) {
     console.error('Download error', err);
-    const statusCode = err.message.includes('Vídeo muito longo') || err.message.includes('Arquivo muito grande') ? 400 : 500;
-    res.status(statusCode).json({ error: err.message.includes('Vídeo muito longo') || err.message.includes('Arquivo muito grande') ? err.message : 'Failed to download', details: statusCode === 500 ? err.message : undefined });
+    const statusCode = err.statusCode || (err.message.includes('Vídeo muito longo') || err.message.includes('Arquivo muito grande') ? 400 : 500);
+    res.status(statusCode).json({ error: statusCode < 500 ? err.message : 'Failed to download', details: statusCode === 500 ? err.message : undefined });
   }
 });
 
