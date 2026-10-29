@@ -23,7 +23,7 @@ Inicie o backend com `npm start` e acesse `http://localhost:3000` no navegador. 
 | Plataforma | Suporte | Observação |
 |---|---|---|
 | YouTube | Vídeos, Shorts, `youtu.be`, ao vivo não | Requer Node 22+ ou Deno para o runtime JS do yt-dlp. Em IPs de datacenter pode exigir cookies/PO token |
-| Instagram | Reels e posts públicos | Usa impersonation (`curl-cffi`); conteúdo restrito pode conectar a conta pelo app |
+| Instagram | Reels e posts públicos | Impersonation (`curl-cffi`) + login assistido no app para conteúdo restrito |
 | TikTok | Vídeos e links `vm/vt.tiktok.com` | Pode exigir impersonation (`curl-cffi`) |
 | Facebook | Vídeos, Reels e `fb.watch` | Conteúdo privado exige autenticação |
 | X/Twitter | Posts com vídeo | Depende do extractor do yt-dlp |
@@ -45,21 +45,34 @@ sem login.
 
 Se o conteúdo continuar exigindo autenticação, o app mostra o botão
 **Conectar conta** (ou abre o diálogo automaticamente após um erro
-`AUTH_REQUIRED`). O usuário cola o `sessionid`/`cookies.txt` exportado do próprio
-navegador — **a senha nunca é solicitada**. A sessão:
+`AUTH_REQUIRED`). O diálogo abre a **tela real de login do Instagram** em um
+Chromium headless no servidor. O usuário digita usuário, senha e 2FA
+normalmente, como no navegador, e o backend captura apenas os cookies
+resultantes. A senha transita pela sessão do navegador durante o login, mas não
+é lida pela aplicação, armazenada ou registrada em logs. A sessão:
 
 - fica somente na memória do servidor (não vai para o banco nem para logs);
 - é usada apenas em downloads do Instagram;
 - expira automaticamente (`IG_SESSION_TTL`, padrão 12 horas) e pode ser
   desconectada a qualquer momento.
 
+Para quem preferir, o diálogo tem a opção avançada **“Prefiro colar os cookies
+manualmente”**, que aceita `sessionid` ou um `cookies.txt` exportado.
+
+Requisitos do login assistido: `playwright-core` (dependência npm) e
+Chromium/Chrome instalado. A imagem Docker já inclui Chromium; em instalação
+manual, configure `IG_BROWSER_PATH` se o binário não estiver em um caminho
+padrão. Desafios de segurança (2FA, captcha, confirmação por e-mail) aparecem na
+própria janela e podem ser concluídos normalmente; se o Instagram bloquear o
+navegador do servidor, resta a opção manual de cookies.
+
 Como a sessão vive em memória, reinícios do processo desconectam a conta e
 implantação com múltiplas instâncias exige sticky sessions (ou um store
 compartilhado).
 
-O uso de cookies de conta é opcional e por conta e risco do usuário: o Instagram
-pode sinalizar contas usadas em automação. Respeite os termos da plataforma e
-baixe apenas conteúdo que você tem direito de salvar.
+O uso de uma conta é opcional e por conta e risco do usuário: o Instagram pode
+sinalizar contas usadas em automação. Use HTTPS em produção e respeite os termos
+da plataforma e o direito de salvar cada conteúdo.
 
 ### Cookies globais (fallback do servidor)
 
@@ -81,6 +94,7 @@ e saiba que cookies não são registrados nos logs.
 - JavaScript
 - Node.js / Express
 - yt-dlp e ffmpeg no servidor
+- Playwright + Chromium para o login assistido do Instagram
 
 ## 📦 Instalação
 

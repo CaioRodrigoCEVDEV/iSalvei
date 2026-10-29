@@ -15,9 +15,12 @@ testes e as limitações conhecidas.
   tratamento dos códigos de erro, conexão opcional da conta do Instagram e ação
   de salvar novamente.
 - Painel de sessão do Instagram (`/api/instagram/session`): mostra o estado da
-  conta conectada e abre um diálogo para colar `sessionid`/`cookies.txt` quando o
-  backend responde `AUTH_REQUIRED` com `loginRequired: true`. Após conectar, o
-  download é repetido automaticamente.
+  conta conectada. Quando o backend responde `AUTH_REQUIRED` com
+  `loginRequired: true`, abre um diálogo com a tela real de login do Instagram
+  transmitida por SSE (`/api/instagram/login/:id/stream`). O usuário clica na
+  imagem, digita em um campo auxiliar e resolve 2FA/desafios normalmente; o
+  backend captura só os cookies e o download é repetido automaticamente. A opção
+  avançada de colar `sessionid`/`cookies.txt` fica recolhida no mesmo diálogo.
 - `frontend/assets/js/i18n.js`: mesmas oito localidades existentes (`pt-BR`,
   `en`, `es`, `fr`, `de`, `it`, `ja`, `zh-CN`).
 - `frontend/sw.js`: cache versionado, precache dos assets novos e atualização do
@@ -53,8 +56,10 @@ testes e as limitações conhecidas.
    conexão da conta; ao conectar, o download é refeito automaticamente. Detalhes
    técnicos ficam no console e nos logs do servidor.
 7. Sessão do Instagram: desconectada (botão “Conectar conta”), conectada
-   (indicador verde e botão “Desconectar”) e erro de cookies inválidos dentro do
-   diálogo, com foco e `role="alert"`.
+   (indicador verde e botão “Desconectar”), carregando o Chromium, tela de login
+   ao vivo, conexão perdida com botão “Tentar novamente”, navegador indisponível
+   (com a opção manual aberta) e erro de cookies inválidos, com foco e
+   `role="alert"`.
 
 ## Acessibilidade
 

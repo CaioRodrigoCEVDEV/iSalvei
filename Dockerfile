@@ -7,7 +7,7 @@ ARG YTDLP_VERSION=2026.10.26
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
       python3 python3-venv python3-pip ffmpeg curl ca-certificates \
-      build-essential \
+      build-essential chromium fonts-liberation fonts-noto-color-emoji \
     && rm -rf /var/lib/apt/lists/* \
     && python3 -m venv /opt/yt-dlp \
     && /opt/yt-dlp/bin/pip install --no-cache-dir --upgrade pip \
@@ -18,6 +18,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
        fi \
     && ln -sf /opt/yt-dlp/bin/yt-dlp /usr/local/bin/yt-dlp \
     && yt-dlp --version
+
+# Login assistido do Instagram usa o Chromium do sistema via playwright-core.
+ENV IG_BROWSER_PATH=/usr/bin/chromium
 
 WORKDIR /app
 COPY package.json package-lock.json ./

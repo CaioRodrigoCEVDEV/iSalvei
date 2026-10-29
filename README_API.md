@@ -55,4 +55,4 @@ As respostas de erro têm o formato:
 ```
 GET /health
 ```
-Retorna `{ "ok": true|false, "checks": { "ytdlp": true, "ffmpeg": true, "ffprobe": true, "tmp": true, "cookies": "not_configured" } }`.
+Retorna `{ "ok": true|false, "checks": { "ytdlp": true, "ffmpeg": true, "ffprobe": true, "tmp": true, "cookies": "not_configured", "instagramLogin": "ready|unavailable|disabled" } }`.

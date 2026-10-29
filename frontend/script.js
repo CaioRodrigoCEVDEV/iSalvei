@@ -34,14 +34,30 @@
     var connectButtons = document.querySelectorAll('[data-ig-connect]');
     var disconnectButtons = document.querySelectorAll('[data-ig-disconnect]');
     var cookiesInput = document.querySelector('[data-ig-cookies]');
+    var manualSubmit = document.querySelector('[data-ig-manual-submit]');
+    var advancedEl = document.querySelector('[data-ig-advanced]');
     var errorEl = document.querySelector('[data-ig-error]');
-    var submitButton = document.querySelector('[data-ig-submit]');
     var closeButtons = document.querySelectorAll('[data-ig-cancel]');
+    var loadingEl = document.querySelector('[data-ig-loading]');
+    var screenEl = document.querySelector('[data-ig-screen]');
+    var liveErrorEl = document.querySelector('[data-ig-live-error]');
+    var liveErrorTextEl = document.querySelector('[data-ig-live-error-text]');
+    var retryButton = document.querySelector('[data-ig-retry]');
+    var controlsEl = document.querySelector('[data-ig-controls]');
+    var remoteInput = document.querySelector('[data-ig-type]');
+    var keyButtons = document.querySelectorAll('[data-ig-key]');
+    var scrollButtons = document.querySelectorAll('[data-ig-scroll]');
 
     var connected = false;
     var busy = false;
     var pendingRetry = null;
     var lastFocus = null;
+    var loginId = null;
+    var stream = null;
+    var screenWidth = 430;
+    var screenHeight = 860;
+    var lastInputValue = '';
+    var startSeq = 0;
 
     function setError(key) {
       if (!errorEl) return;
@@ -66,29 +82,175 @@
       for (var j = 0; j < disconnectButtons.length; j++) disconnectButtons[j].hidden = !connected;
     }
 
+    function setLiveState(state) {
+      if (loadingEl) loadingEl.hidden = state !== 'loading';
+      if (screenEl) screenEl.hidden = state !== 'screen';
+      if (liveErrorEl) liveErrorEl.hidden = state !== 'error';
+      if (controlsEl) controlsEl.hidden = state !== 'screen';
+    }
+
+    function showLiveError(key, message) {
+      setLiveState('error');
+      if (liveErrorTextEl) liveErrorTextEl.textContent = message || translate(key || 'instagram.live.error');
+      if (advancedEl && (key === 'instagram.live.unavailable' || key === 'instagram.live.busy')) {
+        advancedEl.open = true;
+      }
+    }
+
+    function liveErrorKey(code) {
+      if (code === 'BROWSER_UNAVAILABLE' || code === 'BROWSER_ERROR') return 'instagram.live.unavailable';
+      if (code === 'LOGIN_BUSY' || code === 'LOGIN_RATE_LIMITED') return 'instagram.live.busy';
+      return 'instagram.live.error';
+    }
+
+    function cancelLive(keepalive) {
+      startSeq++;
+      if (stream) {
+        try { stream.close(); } catch (error) {}
+        stream = null;
+      }
+      if (loginId) {
+        var id = loginId;
+        loginId = null;
+        fetch('/api/instagram/login/' + encodeURIComponent(id), {
+          method: 'DELETE',
+          credentials: 'same-origin',
+          keepalive: Boolean(keepalive)
+        }).catch(function () {});
+      }
+      lastInputValue = '';
+      if (remoteInput) remoteInput.value = '';
+    }
+
+    function sendInput(payload) {
+      if (!loginId) return;
+      fetch('/api/instagram/login/' + encodeURIComponent(loginId) + '/input', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      }).catch(function (error) {
+        console.error('[iSalvei] instagram input failed', error);
+      });
+    }
+
+    function claimLogin() {
+      if (!loginId) return;
+      var id = loginId;
+      loginId = null;
+      if (stream) {
+        try { stream.close(); } catch (error) {}
+        stream = null;
+      }
+
+      fetch('/api/instagram/login/' + encodeURIComponent(id) + '/claim', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' }
+      }).then(function (response) {
+        return response.json().catch(function () { return {}; }).then(function (body) {
+          if (!response.ok) throw body || {};
+          return body;
+        });
+      }).then(function () {
+        connected = true;
+        render();
+        var retry = pendingRetry;
+        close();
+        if (retry) retry();
+      }).catch(function (error) {
+        console.error('[iSalvei] instagram claim failed', error && error.code);
+        showLiveError(error && error.code === 'LOGIN_PENDING' ? 'instagram.live.not-ready' : 'instagram.live.error');
+      });
+    }
+
+    function handleStreamMessage(event) {
+      var message;
+      try {
+        message = JSON.parse(event.data);
+      } catch (error) {
+        return;
+      }
+
+      if (message.type === 'frame') {
+        screenWidth = Number(message.width) || 430;
+        screenHeight = Number(message.height) || 860;
+        if (screenEl) screenEl.src = 'data:image/jpeg;base64,' + message.image;
+        setLiveState('screen');
+      } else if (message.type === 'connected') {
+        claimLogin();
+      } else if (message.type === 'error') {
+        showLiveError(null, message.message || translate('instagram.live.error'));
+      }
+    }
+
+    function startLive() {
+      cancelLive(false);
+      setError(null);
+      setLiveState('loading');
+      if (advancedEl) advancedEl.open = false;
+
+      var seq = ++startSeq;
+      fetch('/api/instagram/login', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' }
+      }).then(function (response) {
+        return response.json().catch(function () { return {}; }).then(function (body) {
+          if (!response.ok) throw body || { status: response.status };
+          return body;
+        });
+      }).then(function (body) {
+        if (seq !== startSeq) {
+          if (body && body.id) {
+            fetch('/api/instagram/login/' + encodeURIComponent(body.id), {
+              method: 'DELETE',
+              credentials: 'same-origin',
+              keepalive: true
+            }).catch(function () {});
+          }
+          return;
+        }
+        if (!body || !body.id) throw { code: 'BROWSER_ERROR' };
+
+        loginId = body.id;
+        stream = new EventSource('/api/instagram/login/' + encodeURIComponent(loginId) + '/stream');
+        stream.onmessage = handleStreamMessage;
+        stream.onerror = function () {
+          if (connected || !loginId) return;
+          showLiveError('instagram.live.disconnected');
+        };
+
+        if (remoteInput) remoteInput.value = '';
+        lastInputValue = '';
+      }).catch(function (error) {
+        if (seq !== startSeq) return;
+        console.error('[iSalvei] instagram live login failed', error && error.code);
+        var key = liveErrorKey(error && error.code);
+        showLiveError(key, key === 'instagram.live.error' ? (error && error.error) : null);
+        if (advancedEl) advancedEl.open = true;
+      });
+    }
+
     function open(retry) {
       if (!modal) return;
       pendingRetry = typeof retry === 'function' ? retry : null;
       lastFocus = document.activeElement;
       setError(null);
       if (cookiesInput) cookiesInput.value = '';
-      if (submitButton) {
-        submitButton.textContent = translate(pendingRetry ? 'instagram.modal.submit-retry' : 'instagram.modal.submit');
-        submitButton.disabled = false;
-      }
       modal.hidden = false;
       document.body.classList.add('has-ig-modal');
-      if (cookiesInput) {
-        try { cookiesInput.focus({ preventScroll: true }); } catch (error) { cookiesInput.focus(); }
-      }
+      startLive();
     }
 
     function close() {
       if (!modal) return;
+      if (loginId) cancelLive(false);
       modal.hidden = true;
       document.body.classList.remove('has-ig-modal');
       pendingRetry = null;
       setError(null);
+      setLiveState('loading');
       if (lastFocus && typeof lastFocus.focus === 'function') {
         try { lastFocus.focus({ preventScroll: true }); } catch (error) { lastFocus.focus(); }
       }
@@ -111,7 +273,7 @@
       });
     }
 
-    function submit() {
+    function submitManual() {
       if (!cookiesInput || busy) return;
       var value = cookiesInput.value.trim();
       if (!value) {
@@ -121,9 +283,9 @@
       }
 
       busy = true;
-      if (submitButton) {
-        submitButton.disabled = true;
-        submitButton.classList.add('is-loading');
+      if (manualSubmit) {
+        manualSubmit.disabled = true;
+        manualSubmit.classList.add('is-loading');
       }
       setError(null);
 
@@ -144,13 +306,13 @@
         close();
         if (retry) retry();
       }).catch(function (error) {
-        console.error('[iSalvei] instagram session failed', error && error.code);
+        console.error('[iSalvei] instagram manual session failed', error && error.code);
         setError(error && error.code === 'INVALID_COOKIES' ? 'instagram.modal.invalid' : 'instagram.modal.error');
       }).finally(function () {
         busy = false;
-        if (submitButton) {
-          submitButton.disabled = false;
-          submitButton.classList.remove('is-loading');
+        if (manualSubmit) {
+          manualSubmit.disabled = false;
+          manualSubmit.classList.remove('is-loading');
         }
       });
     }
@@ -169,6 +331,21 @@
       });
     }
 
+    function screenPoint(event) {
+      var rect = screenEl.getBoundingClientRect();
+      if (!rect.width || !rect.height) return null;
+      return {
+        x: Math.max(0, Math.min(screenWidth, (event.clientX - rect.left) / rect.width * screenWidth)),
+        y: Math.max(0, Math.min(screenHeight, (event.clientY - rect.top) / rect.height * screenHeight))
+      };
+    }
+
+    function commonPrefixLength(a, b) {
+      var index = 0;
+      while (index < a.length && index < b.length && a[index] === b[index]) index++;
+      return index;
+    }
+
     for (var i = 0; i < connectButtons.length; i++) {
       connectButtons[i].addEventListener('click', function () { open(null); });
     }
@@ -178,19 +355,68 @@
     for (var k = 0; k < closeButtons.length; k++) {
       closeButtons[k].addEventListener('click', close);
     }
-    if (submitButton) submitButton.addEventListener('click', submit);
+    if (manualSubmit) manualSubmit.addEventListener('click', submitManual);
+    if (retryButton) retryButton.addEventListener('click', startLive);
+
+    if (screenEl) {
+      screenEl.addEventListener('click', function (event) {
+        var point = screenPoint(event);
+        if (point) sendInput({ type: 'click', x: Math.round(point.x), y: Math.round(point.y) });
+      });
+      screenEl.addEventListener('wheel', function (event) {
+        event.preventDefault();
+        var point = screenPoint(event) || { x: screenWidth / 2, y: screenHeight / 2 };
+        sendInput({ type: 'scroll', x: Math.round(point.x), y: Math.round(point.y), deltaY: event.deltaY });
+      }, { passive: false });
+    }
+
+    if (remoteInput) {
+      remoteInput.addEventListener('input', function () {
+        if (!loginId) return;
+        var value = remoteInput.value;
+        var common = commonPrefixLength(value, lastInputValue);
+        var removed = lastInputValue.length - common;
+        var inserted = value.slice(common);
+
+        var backspaces = Math.min(removed, 32);
+        for (var index = 0; index < backspaces; index++) {
+          sendInput({ type: 'key', key: 'Backspace' });
+        }
+        if (inserted) sendInput({ type: 'type', text: inserted });
+
+        lastInputValue = value;
+        if (value.length > 256) {
+          remoteInput.value = '';
+          lastInputValue = '';
+        }
+      });
+      remoteInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          sendInput({ type: 'key', key: 'Enter' });
+        }
+      });
+    }
+
+    for (var m = 0; m < keyButtons.length; m++) {
+      keyButtons[m].addEventListener('click', function () {
+        sendInput({ type: 'key', key: this.getAttribute('data-ig-key') });
+      });
+    }
+    for (var n = 0; n < scrollButtons.length; n++) {
+      scrollButtons[n].addEventListener('click', function () {
+        sendInput({
+          type: 'scroll',
+          x: screenWidth / 2,
+          y: screenHeight / 2,
+          deltaY: Number(this.getAttribute('data-ig-scroll')) || 0
+        });
+      });
+    }
 
     if (modal) {
       modal.addEventListener('click', function (event) {
         if (event.target === modal) close();
-      });
-    }
-    if (cookiesInput) {
-      cookiesInput.addEventListener('keydown', function (event) {
-        if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
-          event.preventDefault();
-          submit();
-        }
       });
     }
     document.addEventListener('keydown', function (event) {
@@ -198,9 +424,9 @@
     });
     document.addEventListener('localechange', function () {
       if (panel && !panel.hidden) render();
-      if (modal && !modal.hidden && submitButton) {
-        submitButton.textContent = translate(pendingRetry ? 'instagram.modal.submit-retry' : 'instagram.modal.submit');
-      }
+    });
+    window.addEventListener('pagehide', function () {
+      if (loginId) cancelLive(true);
     });
 
     refresh();

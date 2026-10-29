@@ -41,6 +41,38 @@ function fakeDownloader(filePath, options = {}) {
   };
 }
 
+function fakeLoginManager(options = {}) {
+  return {
+    calls: [],
+    async start() {
+      this.calls.push({ method: 'start' });
+      if (options.startError) throw options.startError;
+      return { id: 'a'.repeat(48), expiresAt: Date.now() + 60000, width: 430, height: 860 };
+    },
+    subscribe(id, ip, res) {
+      this.calls.push({ method: 'subscribe', id, ip });
+      res.status(200);
+      res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+      res.write('data: {"type":"ready"}\n\n');
+      res.end();
+    },
+    async input(id, body, ip) {
+      this.calls.push({ method: 'input', id, body, ip });
+      if (options.inputError) throw options.inputError;
+      return { ok: true };
+    },
+    claim(id, ip) {
+      this.calls.push({ method: 'claim', id, ip });
+      if (options.claimError) throw options.claimError;
+      return '.instagram.com\tTRUE\t/\tTRUE\t0\tsessionid\t123%3Aabc\n';
+    },
+    cancel(id, ip) {
+      this.calls.push({ method: 'cancel', id, ip });
+      return true;
+    },
+  };
+}
+
 async function listen(app) {
   const server = http.createServer(app);
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
@@ -226,6 +258,117 @@ test('sessão do Instagram conecta, usa no download e desconecta', async (t) => 
 
   const after = await fetch(`${base}/api/instagram/session`, { headers: { cookie } });
   assert.equal((await after.json()).connected, false);
+});
+
+test('login assistido inicia, transmite, recebe input, reivindica e cancela', async (t) => {
+  const file = tempMedia(t);
+  const downloader = fakeDownloader(file);
+  const loginManager = fakeLoginManager();
+  const { app } = createApp({
+    config: makeConfig({ RATE_LIMIT_MAX: '100', IG_LOGIN_RATE_MAX: '100' }),
+    downloader,
+    loginManager,
+  });
+  const { server, base } = await listen(app);
+  t.after(() => server.close());
+
+  const start = await fetch(`${base}/api/instagram/login`, { method: 'POST' });
+  assert.equal(start.status, 201);
+  const session = await start.json();
+  assert.equal(session.id, 'a'.repeat(48));
+
+  const input = await fetch(`${base}/api/instagram/login/${session.id}/input`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ type: 'type', text: 'usuario' }),
+  });
+  assert.equal(input.status, 200);
+
+  const stream = await fetch(`${base}/api/instagram/login/${session.id}/stream`);
+  assert.equal(stream.status, 200);
+  assert.match(stream.headers.get('content-type'), /text\/event-stream/);
+  assert.match(await stream.text(), /"type":"ready"/);
+
+  const claim = await fetch(`${base}/api/instagram/login/${session.id}/claim`, { method: 'POST' });
+  assert.equal(claim.status, 200);
+  const cookie = String(claim.headers.get('set-cookie')).split(';')[0];
+  assert.match(cookie, /^isalvei_ig=[a-f0-9]{64}$/);
+
+  const status = await fetch(`${base}/api/instagram/session`, { headers: { cookie } });
+  assert.equal((await status.json()).connected, true);
+
+  const download = await fetch(
+    `${base}/api/download?url=${encodeURIComponent('https://www.instagram.com/reel/abc/')}`,
+    { headers: { cookie } }
+  );
+  assert.equal(download.status, 200);
+  await download.text();
+  assert.match(downloader.calls[0].instagramCookies, /\tsessionid\t123%3Aabc/);
+
+  const cancel = await fetch(`${base}/api/instagram/login/${session.id}`, { method: 'DELETE' });
+  assert.equal(cancel.status, 200);
+
+  assert.ok(loginManager.calls.some((call) => call.method === 'claim'));
+  assert.ok(loginManager.calls.some((call) => call.method === 'cancel'));
+});
+
+test('login assistido rejeita origem diferente', async (t) => {
+  const file = tempMedia(t);
+  const downloader = fakeDownloader(file);
+  const loginManager = fakeLoginManager();
+  const { app } = createApp({
+    config: makeConfig({ RATE_LIMIT_MAX: '100', IG_LOGIN_RATE_MAX: '100' }),
+    downloader,
+    loginManager,
+  });
+  const { server, base } = await listen(app);
+  t.after(() => server.close());
+
+  const response = await fetch(`${base}/api/instagram/login`, {
+    method: 'POST',
+    headers: { origin: 'https://evil.example' },
+  });
+  assert.equal(response.status, 403);
+  assert.equal((await response.json()).code, 'CSRF_REJECTED');
+  assert.equal(loginManager.calls.length, 0);
+});
+
+test('login assistido retorna erro quando navegador está indisponível', async (t) => {
+  const file = tempMedia(t);
+  const downloader = fakeDownloader(file);
+  const loginManager = fakeLoginManager({
+    startError: appError(503, 'BROWSER_UNAVAILABLE', 'Chromium indisponível.'),
+  });
+  const { app } = createApp({
+    config: makeConfig({ RATE_LIMIT_MAX: '100', IG_LOGIN_RATE_MAX: '100' }),
+    downloader,
+    loginManager,
+  });
+  const { server, base } = await listen(app);
+  t.after(() => server.close());
+
+  const response = await fetch(`${base}/api/instagram/login`, { method: 'POST' });
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).code, 'BROWSER_UNAVAILABLE');
+});
+
+test('login assistido limita tentativas por IP', async (t) => {
+  const file = tempMedia(t);
+  const downloader = fakeDownloader(file);
+  const loginManager = fakeLoginManager();
+  const { app } = createApp({
+    config: makeConfig({ RATE_LIMIT_MAX: '100', IG_LOGIN_RATE_MAX: '1' }),
+    downloader,
+    loginManager,
+  });
+  const { server, base } = await listen(app);
+  t.after(() => server.close());
+
+  const first = await fetch(`${base}/api/instagram/login`, { method: 'POST' });
+  assert.equal(first.status, 201);
+  const second = await fetch(`${base}/api/instagram/login`, { method: 'POST' });
+  assert.equal(second.status, 429);
+  assert.equal((await second.json()).code, 'LOGIN_RATE_LIMITED');
 });
 
 test('sessão do Instagram rejeita cookies sem sessionid', async (t) => {
