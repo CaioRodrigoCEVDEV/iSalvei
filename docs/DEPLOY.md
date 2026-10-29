@@ -208,6 +208,17 @@ O método é detectado no executável realmente resolvido para o backend:
 | `standalone` | binário grande/ELF/zipapp | download do release + checksum SHA-256 + troca atômica | sim |
 | Docker | container | rebuild da imagem com `YTDLP_VERSION` | sim |
 
+Versão mais recente em instalações `pip`/`venv`/`pipx`:
+
+- O script consulta o `Requires-Python` de cada release no PyPI e escolhe a
+  versão estável mais recente compatível com o interpretador do yt-dlp.
+- Se a release mais nova do GitHub exigir Python mais novo que o disponível,
+  o deploy usa a mais recente compatível e registra um aviso, em vez de falhar
+  no `pip`. Exemplo: Python 3.10 usa a série que aceita `>=3.10`; para usar a
+  release que exige `>=3.11`, atualize o Python ou migre para um ambiente
+  gerenciado (venv/pipx/standalone).
+- `--yt-dlp-version` continua fixando exatamente a versão informada.
+
 Regras de segurança:
 
 - Nunca usa `sudo pip install` no Python do sistema.

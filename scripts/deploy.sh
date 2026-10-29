@@ -1371,6 +1371,81 @@ resolve_latest_ytdlp_version() {
   printf '%s\n' "$tag"
 }
 
+# Maior versão estável do PyPI cujo Requires-Python aceita o interpretador
+# usado pelo yt-dlp. Evita tentar a "latest" quando ela exige Python mais novo.
+resolve_latest_compatible_ytdlp_version() {
+  local python="$1" py_version json
+  [[ -n "$python" && -x "$python" ]] || return 1
+
+  py_version="$("$python" -c 'import sys; print("%d.%d.%d" % sys.version_info[:3])' 2>/dev/null || true)"
+  [[ -n "$py_version" ]] || return 1
+
+  json="$(curl -fsSL --max-time 25 https://pypi.org/pypi/yt-dlp/json 2>/dev/null || true)"
+  [[ -n "$json" ]] || return 1
+
+  printf '%s' "$json" | node -e '
+    const target = process.argv[1].split(".").map(Number);
+    let data = "";
+    process.stdin.on("data", d => data += d);
+    process.stdin.on("end", () => {
+      const releases = JSON.parse(data).releases || {};
+      const tuple = v => v.split(".").map(Number);
+
+      function cmp(a, b) {
+        const n = Math.max(a.length, b.length);
+        for (let i = 0; i < n; i++) {
+          const x = a[i] || 0, y = b[i] || 0;
+          if (x !== y) return x < y ? -1 : 1;
+        }
+        return 0;
+      }
+
+      function satisfies(spec) {
+        if (!spec) return true;
+        for (const raw of spec.split(",")) {
+          const part = raw.trim();
+          const m = part.match(/^(>=|<=|==|!=|>|<|~=)\s*(\d+(?:\.\d+)*)(\.\*)?$/);
+          if (!m) return false;
+          const op = m[1], v = tuple(m[2]), wildcard = Boolean(m[3]);
+
+          if ((op === "==" || op === "!=") && wildcard) {
+            const same = cmp(target.slice(0, v.length), v) === 0;
+            if (op === "==" && !same) return false;
+            if (op === "!=" && same) return false;
+            continue;
+          }
+
+          const c = cmp(target, v);
+          if (op === ">=" && c < 0) return false;
+          if (op === ">" && c <= 0) return false;
+          if (op === "<=" && c > 0) return false;
+          if (op === "<" && c >= 0) return false;
+          if (op === "==" && c !== 0) return false;
+          if (op === "!=" && c === 0) return false;
+          if (op === "~=") {
+            const upper = v.length <= 2 ? [v[0] + 1, 0] : [v[0], v[1] + 1];
+            if (c < 0 || cmp(target, upper) >= 0) return false;
+          }
+        }
+        return true;
+      }
+
+      let best = "";
+      for (const [version, files] of Object.entries(releases)) {
+        if (!/^\d{4}\.\d{1,2}\.\d{1,2}$/.test(version)) continue;
+        if (!Array.isArray(files) || files.length === 0) continue;
+        if (files.every(f => f && f.yanked)) continue;
+        const spec = (files.find(f => f && f.requires_python) || {}).requires_python || "";
+        if (!satisfies(spec)) continue;
+        if (!best || cmp(tuple(version), tuple(best)) > 0) best = version;
+      }
+
+      if (!best) process.exit(1);
+      process.stdout.write(best);
+    });
+  ' "$py_version"
+}
+
 resolve_targets() {
   log_step "Definindo versões alvo"
 
@@ -1388,8 +1463,19 @@ resolve_targets() {
     YTDLP_TARGET_VERSION="$REQUESTED_YTDLP_VERSION"
     log "Versão do yt-dlp fixada por configuração: $YTDLP_TARGET_VERSION"
   else
-    YTDLP_TARGET_VERSION="$(resolve_latest_ytdlp_version)"
-    log "Versão mais recente do yt-dlp: $YTDLP_TARGET_VERSION"
+    local latest compatible py_version
+    latest="$(resolve_latest_ytdlp_version)"
+    YTDLP_TARGET_VERSION="$latest"
+    log "Versão mais recente do yt-dlp: $latest"
+
+    if [[ "$YTDLP_METHOD" =~ ^(pip|venv|pipx)$ && -n "$YTDLP_PYTHON" ]]; then
+      compatible="$(resolve_latest_compatible_ytdlp_version "$YTDLP_PYTHON" || true)"
+      if [[ -n "$compatible" && "$(normalize_version "$compatible")" != "$(normalize_version "$latest")" ]]; then
+        py_version="$("$YTDLP_PYTHON" -V 2>&1 || true)"
+        log_warn "yt-dlp $latest não é compatível com $py_version; usando a versão mais recente compatível: $compatible."
+        YTDLP_TARGET_VERSION="$compatible"
+      fi
+    fi
   fi
 
   if [[ -n "$YTDLP_OLD_VERSION" && "$YTDLP_TARGET_VERSION" != "apt" ]]; then

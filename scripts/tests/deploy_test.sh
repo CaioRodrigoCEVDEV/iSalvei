@@ -122,6 +122,38 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Versão do yt-dlp compatível com o Python do backend
+# ---------------------------------------------------------------------------
+mkdir -p "$TMP/py"
+cat > "$TMP/py/python310" <<'EOF'
+#!/usr/bin/env bash
+if [[ "${1:-}" == "-c" ]]; then
+  echo "3.10.12"
+  exit 0
+fi
+exit 1
+EOF
+chmod +x "$TMP/py/python310"
+
+cat > "$TMP/pypi-ytdlp.json" <<'EOF'
+{
+  "releases": {
+    "2026.10.26": [{"requires_python": ">=3.11", "yanked": false}],
+    "2026.10.21": [{"requires_python": ">=3.10", "yanked": false}],
+    "2026.3.17": [{"requires_python": ">=3.10", "yanked": false}],
+    "2026.10.27.dev0": [{"requires_python": ">=3.11", "yanked": false}],
+    "2025.1.1": [{"requires_python": ">=3.9", "yanked": true}]
+  }
+}
+EOF
+
+compat_out="$(
+  curl() { cat "$TMP/pypi-ytdlp.json"; }
+  resolve_latest_compatible_ytdlp_version "$TMP/py/python310"
+)"
+assert_eq "$compat_out" "2026.10.21" "escolhe yt-dlp compatível com Python 3.10"
+
+# ---------------------------------------------------------------------------
 # Detecção de systemd sem variáveis explícitas
 # ---------------------------------------------------------------------------
 mkdir -p "$TMP/bin" "$TMP/isalvei"
