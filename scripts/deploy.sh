@@ -15,7 +15,7 @@
 # =============================================================================
 set -Eeuo pipefail
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="${DEPLOY_SCRIPT_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)}"
 DEFAULT_APP_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 
 # -----------------------------------------------------------------------------
@@ -78,6 +78,7 @@ SECONDS=0
 
 COMMIT_BEFORE=""
 COMMIT_AFTER=""
+ORIGINAL_BRANCH=""
 CODE_CHANGED=0
 CODE_CHANGED_PLANNED=0
 DEPS_CHANGED=0
@@ -523,6 +524,7 @@ init_paths() {
   if [[ -d "$APP_DIR/.git" ]]; then
     COMMIT_BEFORE="$(git -C "$APP_DIR" rev-parse HEAD 2>/dev/null || true)"
     COMMIT_AFTER="$COMMIT_BEFORE"
+    ORIGINAL_BRANCH="$(git -C "$APP_DIR" symbolic-ref --quiet --short HEAD 2>/dev/null || true)"
   fi
 }
 
@@ -1609,6 +1611,84 @@ prune_backups() {
 # -----------------------------------------------------------------------------
 # Atualização de código e dependências
 # -----------------------------------------------------------------------------
+ensure_production_branch() {
+  local sha="$1" branch_sha
+  [[ -d "$APP_DIR/.git" ]] || return 0
+  [[ -z "$(git -C "$APP_DIR" symbolic-ref --quiet --short HEAD 2>/dev/null || true)" ]] || return 0
+
+  if git -C "$APP_DIR" show-ref --verify --quiet "refs/heads/$DEPLOY_BRANCH"; then
+    branch_sha="$(git -C "$APP_DIR" rev-parse "$DEPLOY_BRANCH" 2>/dev/null || true)"
+    if [[ "$branch_sha" == "$sha" ]]; then
+      log "Worktree destacado; voltando para a branch $DEPLOY_BRANCH."
+      git -C "$APP_DIR" switch "$DEPLOY_BRANCH"
+    fi
+  else
+    log "Criando branch $DEPLOY_BRANCH em ${sha:0:12}."
+    git -C "$APP_DIR" switch -c "$DEPLOY_BRANCH" "$sha"
+  fi
+}
+
+restore_git_checkout() {
+  local commit="$1" branch="${ORIGINAL_BRANCH:-}" current
+  [[ -n "$commit" ]] || return 1
+
+  if [[ -n "$branch" ]] && git -C "$APP_DIR" show-ref --verify --quiet "refs/heads/$branch"; then
+    current="$(git -C "$APP_DIR" rev-parse "$branch" 2>/dev/null || true)"
+    if [[ "$current" != "$commit" ]]; then
+      log_warn "Restaurando a branch $branch para ${commit:0:12}..."
+      if ! git -C "$APP_DIR" branch -f "$branch" "$commit" >/dev/null 2>&1; then
+        log_warn "Não foi possível mover a branch $branch; mantendo worktree destacado."
+        git -C "$APP_DIR" switch --detach "$commit"
+        return 0
+      fi
+    fi
+    if ! git -C "$APP_DIR" switch "$branch" >/dev/null 2>&1; then
+      log_warn "Não foi possível voltar para a branch $branch; mantendo worktree destacado."
+      git -C "$APP_DIR" switch --detach "$commit"
+    fi
+  else
+    git -C "$APP_DIR" switch --detach "$commit"
+  fi
+}
+
+# Reexecuta o próprio deploy.sh quando a versão do remote mudou. Sem isso, um
+# deploy antigo continuaria usando a lógica antiga até o fim desta execução.
+maybe_self_update() {
+  [[ "${DEPLOY_SELF_UPDATE:-0}" -eq 1 ]] && return 0
+  [[ "${DEPLOY_SKIP_NETWORK_CHECK:-0}" -eq 1 ]] && return 0
+  [[ -d "$APP_DIR/.git" ]] || return 0
+  command -v git >/dev/null 2>&1 || return 0
+
+  local remote_ref="$DEPLOY_REMOTE/$DEPLOY_BRANCH" remote_sha local_sha remote_blob local_blob tmp
+  if ! GIT_TERMINAL_PROMPT=0 git -C "$APP_DIR" fetch --prune "$DEPLOY_REMOTE" "$DEPLOY_BRANCH" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  remote_sha="$(git -C "$APP_DIR" rev-parse "$remote_ref" 2>/dev/null || true)"
+  local_sha="$(git -C "$APP_DIR" rev-parse HEAD 2>/dev/null || true)"
+  [[ -n "$remote_sha" && -n "$local_sha" && "$remote_sha" != "$local_sha" ]] || return 0
+  git -C "$APP_DIR" merge-base --is-ancestor "$local_sha" "$remote_sha" || return 0
+
+  remote_blob="$(git -C "$APP_DIR" rev-parse "$remote_ref:scripts/deploy.sh" 2>/dev/null || true)"
+  local_blob="$(git -C "$APP_DIR" hash-object "$SCRIPT_DIR/deploy.sh" 2>/dev/null || true)"
+  [[ -n "$remote_blob" && -n "$local_blob" && "$remote_blob" != "$local_blob" ]] || return 0
+
+  tmp="$(mktemp "${TMPDIR:-/tmp}/isalvei-deploy-self.XXXXXX" 2>/dev/null || true)"
+  [[ -n "$tmp" ]] || return 0
+  if ! git -C "$APP_DIR" show "$remote_ref:scripts/deploy.sh" > "$tmp" 2>/dev/null || [[ ! -s "$tmp" ]]; then
+    rm -f -- "$tmp"
+    return 0
+  fi
+  chmod 700 "$tmp"
+
+  printf '[deploy] scripts/deploy.sh mudou em %s; reexecutando a versão nova...\n' "${remote_sha:0:12}" >&2
+  export APP_DIR
+  export DEPLOY_SCRIPT_DIR="$SCRIPT_DIR"
+  export DEPLOY_SELF_UPDATE=1
+  export DEPLOY_SELF_UPDATE_TMP="$tmp"
+  exec bash "$tmp" "$@"
+}
+
 update_code() {
   log_step "Buscando atualizações do Git"
 
@@ -1635,6 +1715,7 @@ update_code() {
   local remote_sha local_sha
   remote_sha="$(git -C "$APP_DIR" rev-parse "$remote_ref")"
   local_sha="$(git -C "$APP_DIR" rev-parse HEAD)"
+  ensure_production_branch "$local_sha"
 
   if [[ "$local_sha" == "$remote_sha" ]]; then
     log "Código já está atualizado ($local_sha)."
@@ -2613,8 +2694,8 @@ attempt_rollback() {
   if [[ "$METHOD" == "docker" ]]; then
     if docker_rollback; then ok=0; else ok=1; fi
     if [[ "$CODE_CHANGED" -eq 1 && -d "$APP_DIR/.git" && -n "$COMMIT_BEFORE" ]]; then
-      log_warn "Restaurando worktree para $COMMIT_BEFORE (sem reset --hard)..."
-      if ! git -C "$APP_DIR" switch --detach "$COMMIT_BEFORE"; then
+      log_warn "Restaurando worktree para $COMMIT_BEFORE..."
+      if ! restore_git_checkout "$COMMIT_BEFORE"; then
         log_error "Falha ao restaurar o worktree para $COMMIT_BEFORE."
         ok=1
       fi
@@ -2626,8 +2707,8 @@ attempt_rollback() {
 
     if [[ "$CODE_CHANGED" -eq 1 || "$DEPS_CHANGED" -eq 1 ]]; then
       if [[ -d "$APP_DIR/.git" && -n "$COMMIT_BEFORE" ]]; then
-        log_warn "Restaurando código para $COMMIT_BEFORE (worktree destacado, sem reset --hard)..."
-        if ! git -C "$APP_DIR" switch --detach "$COMMIT_BEFORE"; then
+        log_warn "Restaurando código para $COMMIT_BEFORE..."
+        if ! restore_git_checkout "$COMMIT_BEFORE"; then
           log_error "Falha ao restaurar o código para $COMMIT_BEFORE."
           ok=1
         fi
@@ -2784,7 +2865,12 @@ print_recovery_instructions() {
     printf 'yt-dlp anterior: %s (método: %s)\n' "${YTDLP_OLD_VERSION:-n/d}" "${YTDLP_METHOD:-n/d}"
     printf 'Exemplo de rollback manual:\n'
     printf '  cd %q\n' "$APP_DIR"
-    printf '  git switch --detach %q\n' "${COMMIT_BEFORE:-<commit>}"
+    if [[ -n "$ORIGINAL_BRANCH" ]]; then
+      printf '  git switch %q\n' "$ORIGINAL_BRANCH"
+      printf '  # se a branch já estiver no commit novo: git branch -f %q %q\n' "$ORIGINAL_BRANCH" "${COMMIT_BEFORE:-<commit>}"
+    else
+      printf '  git switch --detach %q\n' "${COMMIT_BEFORE:-<commit>}"
+    fi
     printf '  npm ci --omit=dev\n'
     case "$YTDLP_METHOD" in
       standalone) printf '  # restaurar o binário de %s/ytdlp/yt-dlp.bin\n' "${BACKUP_DIR:-<backup>}" ;;
@@ -2801,9 +2887,19 @@ print_recovery_instructions() {
 # -----------------------------------------------------------------------------
 # Main
 # -----------------------------------------------------------------------------
+cleanup_self_update_tmp() {
+  if [[ -n "${DEPLOY_SELF_UPDATE_TMP:-}" ]]; then
+    rm -f -- "$DEPLOY_SELF_UPDATE_TMP"
+    unset DEPLOY_SELF_UPDATE_TMP
+  fi
+}
+
 main() {
+  local -a original_args=("$@")
+  cleanup_self_update_tmp
   parse_args "$@"
   init_paths
+  maybe_self_update "${original_args[@]}"
 
   if [[ "$DRY_RUN" -eq 0 ]]; then
     acquire_lock

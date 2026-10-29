@@ -306,6 +306,11 @@ segredo. O backup do `.env` e de cookies usa permissão `600`.
 
 ## 7. O que o deploy faz
 
+Antes do preflight, o script verifica se `scripts/deploy.sh` mudou no remote.
+Se mudou, ele reexecuta a versão nova antes de continuar, para não terminar a
+execução usando a lógica antiga (por exemplo, uma regra antiga de atualização do
+`yt-dlp`).
+
 1. Valida diretório, `package.json`, `server.js`, dependências, a versão
    mínima de Node declarada em `engines` (atualmente >= 22), permissões,
    espaço em disco e conectividade.
@@ -379,15 +384,16 @@ a `.deploy/` (backups contêm `.env`).
 Se algo falhar depois do ponto de recuperação, o script tenta:
 
 1. restaurar o `yt-dlp` anterior (wheel/.deb/binário ou reinstalação fixada);
-2. restaurar o código com `git switch --detach <commit-anterior>` (sem
-   `reset --hard`);
+2. restaurar o código e voltar para a branch original (quando o deploy começou
+   em uma branch), sem `reset --hard`;
 3. reinstalar dependências com `npm ci` da versão anterior;
 4. reiniciar o serviço e repetir health check/runtime check;
 5. no Docker, parar/remover o container novo, renomear o anterior de volta e
    iniciá-lo; a imagem anterior permanece tagueada.
 
-O worktree fica **detached** após rollback de código. Para voltar a desenvolver
-ou publicar de novo:
+Se o deploy começou em uma branch, o rollback restaura essa branch e o commit
+anterior, então `git pull` continua funcionando. Se o deploy já começou com
+`HEAD` destacado, o script mantém o worktree destacado. Para voltar a `main`:
 
 ```bash
 git switch main

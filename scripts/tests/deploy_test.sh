@@ -233,6 +233,77 @@ systemd_both_out="$(
 assert_eq "$systemd_both_out" $'isalvei.service\nisalvei-api.service' "detecta serviço e API no modo both"
 
 # ---------------------------------------------------------------------------
+# Self-update do próprio deploy.sh (remote local, sem rede)
+# ---------------------------------------------------------------------------
+if command -v git >/dev/null 2>&1; then
+  mkdir -p "$TMP/selfupdate/scripts"
+  cp "$DEPLOY" "$TMP/selfupdate/scripts/deploy.sh"
+  printf '#!/usr/bin/env bash\n' > "$TMP/selfupdate/server.js"
+  printf '{"name":"selfupdate","scripts":{}}\n' > "$TMP/selfupdate/package.json"
+  git init -q -b main "$TMP/selfupdate"
+  git -C "$TMP/selfupdate" config user.email test@example.com
+  git -C "$TMP/selfupdate" config user.name Test
+  git -C "$TMP/selfupdate" add .
+  git -C "$TMP/selfupdate" commit -qm old
+  git init -q --bare "$TMP/selfupdate-remote.git"
+  git -C "$TMP/selfupdate" remote add origin "$TMP/selfupdate-remote.git"
+  git -C "$TMP/selfupdate" push -qu origin main
+  old_sha="$(git -C "$TMP/selfupdate" rev-parse HEAD)"
+
+  cat > "$TMP/selfupdate/scripts/deploy.sh" <<'EOF'
+#!/usr/bin/env bash
+echo "STUB_NEW_SCRIPT"
+echo "APP_DIR=$APP_DIR"
+echo "SCRIPT_DIR=$DEPLOY_SCRIPT_DIR"
+echo "SELF_UPDATE=$DEPLOY_SELF_UPDATE"
+[[ -f "$DEPLOY_SELF_UPDATE_TMP" ]] && echo "TMP_FILE_OK"
+rm -f "$DEPLOY_SELF_UPDATE_TMP"
+exit 0
+EOF
+  git -C "$TMP/selfupdate" add scripts/deploy.sh
+  git -C "$TMP/selfupdate" commit -qm new
+  git -C "$TMP/selfupdate" push -q origin main
+  git -C "$TMP/selfupdate" reset -q --hard "$old_sha"
+
+  selfupdate_out="$(
+    APP_DIR="$TMP/selfupdate" DEPLOY_BRANCH=main DEPLOY_REMOTE=origin \
+      bash "$TMP/selfupdate/scripts/deploy.sh" --dry-run 2>&1
+  )"
+  assert_contains "$selfupdate_out" "STUB_NEW_SCRIPT" "reexecuta deploy.sh novo do remote"
+  assert_contains "$selfupdate_out" "SELF_UPDATE=1" "marca a reexecução para evitar loop"
+  assert_contains "$selfupdate_out" "TMP_FILE_OK" "novo script recebe o arquivo temporário"
+else
+  not_ok "git ausente para testar self-update"
+fi
+
+# ---------------------------------------------------------------------------
+# Rollback volta para a branch original em vez de deixar HEAD destacado
+# ---------------------------------------------------------------------------
+mkdir -p "$TMP/branchtest"
+git init -q -b main "$TMP/branchtest"
+git -C "$TMP/branchtest" config user.email test@example.com
+git -C "$TMP/branchtest" config user.name Test
+printf 'a\n' > "$TMP/branchtest/f"
+git -C "$TMP/branchtest" add .
+git -C "$TMP/branchtest" commit -qm A
+branch_a="$(git -C "$TMP/branchtest" rev-parse HEAD)"
+printf 'b\n' > "$TMP/branchtest/f"
+git -C "$TMP/branchtest" commit -qam B
+branch_b="$(git -C "$TMP/branchtest" rev-parse HEAD)"
+git -C "$TMP/branchtest" switch -q --detach "$branch_b"
+
+bash -c '
+  source "$1"
+  APP_DIR="$2"
+  DEPLOY_BRANCH=main
+  ORIGINAL_BRANCH=main
+  restore_git_checkout "$3"
+' _ "$DEPLOY" "$TMP/branchtest" "$branch_a" >/dev/null 2>&1
+
+assert_eq "$(git -C "$TMP/branchtest" symbolic-ref --short HEAD)" "main" "rollback volta para a branch main"
+assert_eq "$(git -C "$TMP/branchtest" rev-parse HEAD)" "$branch_a" "rollback restaura o commit anterior na branch"
+
+# ---------------------------------------------------------------------------
 # Dry-run completo em sandbox (sem rede e sem alterar nada)
 # ---------------------------------------------------------------------------
 mkdir -p "$TMP/sandbox"
