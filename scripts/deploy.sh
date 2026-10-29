@@ -445,6 +445,13 @@ proc_cmdline() {
   tr '\0' ' ' < "/proc/$1/cmdline" 2>/dev/null || true
 }
 
+# Evita que "server.js" case com "api_server.js" por substring.
+string_has_entry() {
+  local haystack="$1" entry="$2" escaped
+  escaped="${entry//./\\.}"
+  [[ "$haystack" =~ (^|[^[:alnum:]_.-])${escaped}([^[:alnum:]_.-]|$) ]]
+}
+
 systemd_env_value() {
   local unit="$1" key="$2" envs
   envs="$(systemctl show -p Environment --value "$unit" 2>/dev/null || true)"
@@ -686,56 +693,168 @@ pid_matches_entry() {
   cwd="$(proc_cwd "$pid")"
   [[ "$cwd" == "$APP_DIR" ]] || return 1
   cmd="$(proc_cmdline "$pid")"
-  [[ "$cmd" == *"$entry"* ]] || return 1
+  string_has_entry "$cmd" "$entry" || return 1
   [[ "$cmd" == *node* ]] || return 1
   return 0
 }
 
+systemd_unit_value() {
+  local unit="$1" key="$2"
+  systemctl show -p "$key" --value "$unit" 2>/dev/null || true
+}
+
+systemd_unit_entry() {
+  local unit="$1" exec entry
+  exec="$(systemd_unit_value "$unit" ExecStart)"
+
+  for entry in "${ENTRY_FILES[@]}"; do
+    if string_has_entry "$exec" "$entry"; then
+      printf '%s' "$entry"
+      return 0
+    fi
+  done
+
+  # Unidades com nome explícito de API ou servidor.
+  if [[ "$unit" == *api* ]]; then
+    for entry in "${ENTRY_FILES[@]}"; do
+      if [[ "$entry" == "api_server.js" ]]; then
+        printf '%s' "$entry"
+        return 0
+      fi
+    done
+    return 1
+  fi
+  if [[ "$unit" == *server* ]]; then
+    for entry in "${ENTRY_FILES[@]}"; do
+      if [[ "$entry" == "server.js" ]]; then
+        printf '%s' "$entry"
+        return 0
+      fi
+    done
+  fi
+
+  # Não mistura server e api quando o ExecStart aponta para o outro entry.
+  if [[ "$exec" == *server.js* || "$exec" == *api_server.js* ]]; then
+    return 1
+  fi
+
+  printf '%s' "${ENTRY_FILES[0]}"
+}
+
+systemd_unit_references_app() {
+  local unit="$1" wd exec resolved_wd
+  systemctl cat "$unit" >/dev/null 2>&1 || return 1
+
+  wd="$(systemd_unit_value "$unit" WorkingDirectory)"
+  exec="$(systemd_unit_value "$unit" ExecStart)"
+
+  if [[ -n "$wd" ]]; then
+    resolved_wd="$(realpath -m -- "$wd" 2>/dev/null || printf '%s' "$wd")"
+    [[ "$resolved_wd" == "$APP_DIR" ]] && return 0
+  fi
+  [[ "$exec" == *"$APP_DIR"* ]] && return 0
+
+  return 1
+}
+
+systemd_add_unit() {
+  local unit="$1" entry="${2:-}" existing pid
+  [[ -n "$unit" ]] || return 0
+
+  for existing in "${SYSTEMD_UNITS[@]}"; do
+    [[ "$existing" == "$unit" ]] && return 0
+  done
+
+  if [[ -z "$entry" ]]; then
+    entry="$(systemd_unit_entry "$unit")" || return 0
+  fi
+
+  SYSTEMD_UNITS+=("$unit")
+  SYSTEMD_ENTRIES+=("$entry")
+
+  if [[ -z "$SERVICE_PID" ]]; then
+    pid="$(systemd_unit_value "$unit" MainPID)"
+    if [[ "$pid" =~ ^[0-9]+$ ]] && (( pid > 0 )); then
+      SERVICE_PID="$pid"
+    fi
+  fi
+}
+
 detect_systemd() {
   command -v systemctl >/dev/null 2>&1 || return 1
-  local units unit pid cwd cmd wd exec entry found
-  units="$(systemctl list-units --type=service --state=running --no-legend --plain 2>/dev/null | awk '{print $1}' || true)"
-  [[ -n "$units" ]] || return 1
+  local units unit pid cwd cmd entry app_name cgroup d
 
+  SYSTEMD_UNITS=()
+  SYSTEMD_ENTRIES=()
+  SERVICE_PID=""
+
+  # 1) Unidades em execução (MainPID ou WorkingDirectory/ExecStart no APP_DIR).
+  units="$(systemctl list-units --type=service --state=running --no-legend --plain 2>/dev/null | awk '{print $1}' || true)"
   while IFS= read -r unit; do
     [[ -n "$unit" ]] || continue
-    found=""
-    pid="$(systemctl show -p MainPID --value "$unit" 2>/dev/null || true)"
+
+    pid="$(systemd_unit_value "$unit" MainPID)"
     if [[ "$pid" =~ ^[0-9]+$ ]] && (( pid > 0 )); then
       cwd="$(proc_cwd "$pid")"
       cmd="$(proc_cmdline "$pid")"
-      if [[ "$cwd" == "$APP_DIR" ]]; then
+      if [[ "$cwd" == "$APP_DIR" && "$cmd" == *node* ]]; then
         for entry in "${ENTRY_FILES[@]}"; do
-          if [[ "$cmd" == *"$entry"* && "$cmd" == *node* ]]; then
-            found="$entry"
+          if string_has_entry "$cmd" "$entry"; then
+            systemd_add_unit "$unit" "$entry"
             break
           fi
         done
+        # MainPID é um wrapper (npm, sh, etc.); tenta inferir pelo unit.
+        systemd_add_unit "$unit"
       fi
     fi
 
-    if [[ -z "$found" ]]; then
-      wd="$(systemctl show -p WorkingDirectory --value "$unit" 2>/dev/null || true)"
-      exec="$(systemctl show -p ExecStart --value "$unit" 2>/dev/null || true)"
-      if [[ "$wd" == "$APP_DIR" || "$exec" == *"$APP_DIR"* ]]; then
-        for entry in "${ENTRY_FILES[@]}"; do
-          if [[ "$exec" == *"$entry"* ]]; then
-            found="$entry"
-            break
-          fi
-        done
-        if [[ -z "$found" && "${#ENTRY_FILES[@]}" -eq 1 ]]; then
-          found="${ENTRY_FILES[0]}"
-        fi
-      fi
-    fi
-
-    if [[ -n "$found" ]]; then
-      SYSTEMD_UNITS+=("$unit")
-      SYSTEMD_ENTRIES+=("$found")
-      SERVICE_PID="${SERVICE_PID:-$pid}"
+    if systemd_unit_references_app "$unit"; then
+      systemd_add_unit "$unit"
     fi
   done <<< "$units"
+
+  # 2) Processos Node do APP_DIR, mapeados pelo cgroup do systemd.
+  # Cobre serviços cujo MainPID é um wrapper ou que não aparecem no list-units.
+  shopt -s nullglob
+  for d in /proc/[0-9]*; do
+    pid="${d#/proc/}"
+    [[ "$pid" == "$$" || "$pid" == "$PPID" ]] && continue
+
+    cwd="$(proc_cwd "$pid")"
+    [[ "$cwd" == "$APP_DIR" ]] || continue
+    cmd="$(proc_cmdline "$pid")"
+    [[ "$cmd" == *node* ]] || continue
+
+    cgroup="$(cat "/proc/$pid/cgroup" 2>/dev/null || true)"
+    [[ -n "$cgroup" ]] || continue
+    unit="$(printf '%s\n' "$cgroup" | sed -n 's#.*/\([^/]*\.service\)$#\1#p' | head -1)"
+    [[ -n "$unit" ]] || continue
+    # Evita confundir gerenciadores (ex.: pm2-root.service) com o serviço da app.
+    systemd_unit_references_app "$unit" || continue
+
+    for entry in "${ENTRY_FILES[@]}"; do
+      if string_has_entry "$cmd" "$entry"; then
+        systemd_add_unit "$unit" "$entry"
+        break
+      fi
+    done
+  done
+  shopt -u nullglob
+
+  # 3) Unidades instaladas cujo nome deriva do diretório da aplicação.
+  # Inclui serviços parados e nomes como isalvei-api.service. O alias
+  # "isalvei" cobre instalações cujo APP_DIR tem outro nome.
+  app_name="$(basename "$APP_DIR" | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9_.-')"
+  if [[ -n "$app_name" ]]; then
+    units="$(systemctl list-unit-files --type=service --no-legend --plain 2>/dev/null \
+      | awk -v app="$app_name" 'index(tolower($1), app) || index(tolower($1), "isalvei") {print $1}' || true)"
+    while IFS= read -r unit; do
+      [[ -n "$unit" ]] || continue
+      systemd_unit_references_app "$unit" || continue
+      systemd_add_unit "$unit"
+    done <<< "$units"
+  fi
 
   [[ "${#SYSTEMD_UNITS[@]}" -gt 0 ]]
 }
@@ -752,7 +871,7 @@ detect_pm2() {
     [[ "$cwd" == "$APP_DIR" ]] || continue
     found=""
     for entry in "${ENTRY_FILES[@]}"; do
-      if [[ "$exec_path" == *"$entry" || "$name" == *"${entry%.js}"* ]]; then
+      if string_has_entry "$exec_path" "$entry" || [[ "$name" == *"${entry%.js}"* ]]; then
         found="$entry"
         break
       fi
@@ -784,7 +903,7 @@ detect_direct() {
     cmd="$(proc_cmdline "$pid")"
     [[ "$cmd" == *node* ]] || continue
     for entry in "${ENTRY_FILES[@]}"; do
-      if [[ "$cmd" == *"$entry"* ]]; then
+      if string_has_entry "$cmd" "$entry"; then
         DIRECT_PIDS+=("$pid")
         DIRECT_ENTRIES+=("$entry")
         SERVICE_PID="${SERVICE_PID:-$pid}"
@@ -924,6 +1043,10 @@ detect_method() {
   esac
 
   METHOD="$detected"
+
+  if [[ "$METHOD" == "systemd" ]]; then
+    log "Unidade(s) systemd: ${SYSTEMD_UNITS[*]}"
+  fi
 
   if [[ "$METHOD" == "docker" ]]; then
     command -v jq >/dev/null 2>&1 || die "jq é necessário no modo Docker."
@@ -1824,7 +1947,7 @@ stop_direct_entry() {
       cwd="$(proc_cwd "$p")"
       [[ "$cwd" == "$APP_DIR" ]] || continue
       cmd="$(proc_cmdline "$p")"
-      if [[ "$cmd" == *node* && "$cmd" == *"$entry"* ]]; then
+      if [[ "$cmd" == *node* ]] && string_has_entry "$cmd" "$entry"; then
         pid="$p"; break
       fi
     done

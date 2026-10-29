@@ -109,6 +109,17 @@ Para forçar o mecanismo:
 
 ### systemd
 
+Com apenas `./scripts/deploy.sh` o script já detecta o método e a unidade:
+
+- pelo `MainPID` das unidades em execução (cwd/linha de comando);
+- pelo cgroup dos processos Node cujo cwd é `APP_DIR`, o que cobre unidades
+  cujo `MainPID` é um wrapper (`npm`, `sh`, etc.);
+- por unidades instaladas cujo nome contém o nome do diretório da aplicação
+  (ex.: `APP_DIR=/home/iSalvei` encontra `isalvei.service` e
+  `isalvei-api.service`), inclusive se estiverem paradas.
+
+Use as variáveis apenas para forçar/desambiguar:
+
 ```bash
 DEPLOY_METHOD=systemd \
 DEPLOY_SYSTEMD_SERVICES="isalvei.service" \

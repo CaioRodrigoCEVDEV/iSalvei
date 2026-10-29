@@ -122,6 +122,85 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Detecção de systemd sem variáveis explícitas
+# ---------------------------------------------------------------------------
+mkdir -p "$TMP/bin" "$TMP/isalvei"
+touch "$TMP/isalvei/server.js"
+printf '{"name":"isalvei","scripts":{}}\n' > "$TMP/isalvei/package.json"
+cat > "$TMP/bin/systemctl" <<'EOF'
+#!/usr/bin/env bash
+cmd="${1:-}"
+shift || true
+case "$cmd" in
+  list-units)
+    printf '%s\n' \
+      "isalvei.service loaded active running iSalvei" \
+      "other.service loaded active running Unrelated"
+    ;;
+  list-unit-files)
+    printf '%s\n' \
+      "isalvei.service enabled" \
+      "isalvei-api.service disabled" \
+      "unrelated.service enabled"
+    ;;
+  show)
+    key=""
+    unit=""
+    while (($#)); do
+      case "$1" in
+        -p) key="${2:-}"; shift 2 ;;
+        --value) shift ;;
+        *) unit="$1"; shift ;;
+      esac
+    done
+    case "$unit:$key" in
+      isalvei.service:MainPID) printf '0\n' ;;
+      isalvei.service:WorkingDirectory) printf '%s\n' "$FAKE_APP_DIR" ;;
+      isalvei.service:ExecStart) printf '{ path=/usr/bin/npm ; argv[]=/usr/bin/npm start ; }\n' ;;
+      isalvei-api.service:MainPID) printf '0\n' ;;
+      isalvei-api.service:WorkingDirectory) printf '%s\n' "$FAKE_APP_DIR" ;;
+      isalvei-api.service:ExecStart) printf '{ path=/usr/bin/node ; argv[]=/usr/bin/node api_server.js ; }\n' ;;
+      *) printf '\n' ;;
+    esac
+    ;;
+  cat)
+    case "${1:-}" in
+      isalvei.service|isalvei-api.service) exit 0 ;;
+      *) exit 1 ;;
+    esac
+    ;;
+  *) exit 1 ;;
+esac
+EOF
+chmod +x "$TMP/bin/systemctl"
+
+systemd_out="$(
+  PATH="$TMP/bin:$PATH" FAKE_APP_DIR="$TMP/isalvei" \
+    bash -c '
+      source "$1"
+      APP_DIR="$2"
+      DEPLOY_PROCESS=server
+      ENTRY_FILES=(server.js)
+      detect_systemd || exit 1
+      printf "%s\n" "${SYSTEMD_UNITS[@]}"
+    ' _ "$DEPLOY" "$TMP/isalvei"
+)"
+assert_eq "$systemd_out" "isalvei.service" "detecta isalvei.service automaticamente"
+
+systemd_both_out="$(
+  PATH="$TMP/bin:$PATH" FAKE_APP_DIR="$TMP/isalvei" \
+    bash -c '
+      source "$1"
+      APP_DIR="$2"
+      DEPLOY_PROCESS=both
+      ENTRY_FILES=(server.js api_server.js)
+      detect_systemd || exit 1
+      printf "%s\n" "${SYSTEMD_UNITS[@]}"
+    ' _ "$DEPLOY" "$TMP/isalvei"
+)"
+assert_eq "$systemd_both_out" $'isalvei.service\nisalvei-api.service' "detecta serviço e API no modo both"
+
+# ---------------------------------------------------------------------------
 # Dry-run completo em sandbox (sem rede e sem alterar nada)
 # ---------------------------------------------------------------------------
 mkdir -p "$TMP/sandbox"
