@@ -3,262 +3,341 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>iSalvei — Downloader de vídeos</title>
-  <meta name="description" content="Baixe vídeos públicos de redes sociais e sites suportados pelo yt-dlp com uma interface rápida e moderna.">
-  <meta name="theme-color" content="#07111f">
+  <title>iSalvei — Baixar vídeos</title>
+  <meta name="description" content="Cole o link do vídeo, escolha a qualidade e faça o download. Conteúdo público de plataformas suportadas.">
+  <meta name="theme-color" content="#F5F6F3">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="iSalvei">
   <meta name="mobile-web-app-capable" content="yes">
   <meta property="og:title" content="iSalvei">
+  <meta property="og:description" content="Cole o link do vídeo, escolha a qualidade e faça o download.">
+  <meta property="og:type" content="website">
   <link rel="manifest" href="/manifest.json">
   <link href="assets/img/favicon.png" rel="icon">
   <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
   <link href="assets/img/pwa-512x512.png" rel="icon" sizes="512x512" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-  <link href="assets/css/style.css?v=2.0.0" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="assets/css/style.css?v=3.0.0" rel="stylesheet">
 </head>
-<body>
-  <header class="header">
-    <div class="container navbar">
-      <a class="logo" href="#!" onclick="event.preventDefault();window.scrollTo({top:0,behavior:'smooth'})" aria-label="iSalvei in\u00edcio"><img class="logo-mark" src="assets/img/pwa-192x192.png" alt="iSalvei" width="42" height="42"> iSalvei</a>
+<body id="top">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="#top" aria-label="iSalvei — início">
+        <img class="brand-mark" src="assets/img/pwa-192x192.png" alt="" width="36" height="36">
+        <span class="brand-name">iSalvei</span>
+      </a>
 
-      <nav class="nav-links" data-i18n-aria-label="nav.aria-label">
-        <a class="active" href="#!" data-nav="inicio" data-i18n="nav.inicio">In\u00edcio</a>
-        <a href="#opcoes" data-nav="opcoes" data-i18n="nav.opcoes">Op\u00e7\u00f5es</a>
-        <a href="#como-funciona" data-nav="como-funciona" data-i18n="nav.como-funciona">Como baixar</a>
+      <nav class="site-nav" data-i18n-aria-label="nav.aria-label">
+        <a href="#como-funciona" data-i18n="nav.como-funciona">Como funciona</a>
+        <a href="#plataformas" data-i18n="nav.platforms">Plataformas</a>
       </nav>
 
-      <div class="lang-wrap">
-        <select id="langSelect" data-i18n-aria-label="lang.label">
-          <option value="pt-BR">PT</option>
-          <option value="en">EN</option>
-          <option value="es">ES</option>
-          <option value="fr">FR</option>
-          <option value="de">DE</option>
-          <option value="it">IT</option>
-          <option value="ja">JA</option>
-          <option value="zh-CN">ZH</option>
-        </select>
+      <div class="header-actions">
+        <button id="btnInstall" class="install-btn" type="button" data-i18n-aria-label="install.btn" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="7" y="2" width="10" height="20" rx="2"/>
+            <path d="M12 7v6"/><path d="M9 10h6"/>
+          </svg>
+          <span data-install-label data-i18n="install.btn">Instalar app</span>
+        </button>
+
+        <div class="lang-wrap">
+          <label class="sr-only" for="langSelect" data-i18n="lang.label">Idioma</label>
+          <select id="langSelect" data-i18n-aria-label="lang.label">
+            <option value="pt-BR">PT</option>
+            <option value="en">EN</option>
+            <option value="es">ES</option>
+            <option value="fr">FR</option>
+            <option value="de">DE</option>
+            <option value="it">IT</option>
+            <option value="ja">JA</option>
+            <option value="zh-CN">ZH</option>
+          </select>
+        </div>
       </div>
     </div>
   </header>
 
-  <button id="btnInstall" class="btn btn-success" style="display: none;" data-i18n="install.btn">\ud83d\udcf2 Instalar App</button>
-
   <main>
-    <section class="hero">
-      <div class="container hero-grid">
-        <div class="hero-content">
-          <p class="eyebrow" data-i18n="hero.eyebrow">iSalvei</p>
-          <h1 class="hero-title" data-i18n="hero.title">Cole. Baixe. Pronto.</h1>
-          <p class="lead" data-i18n="hero.desc">Links públicos de YouTube, Instagram, X e centenas de plataformas.<br>Processamento em segundos com proteção automática por IP.</p>
-          <div class="actions">
-            <a class="btn btn-primary" href="#download" data-i18n="hero.cta-primary">Baixar vídeo</a>
-            <a class="btn" href="#opcoes" data-i18n="hero.cta-secondary">Ver plataformas</a>
-          </div>
-        </div>
+    <section class="hero" id="download" aria-labelledby="hero-title">
+      <div class="container hero-inner">
+        <h1 id="hero-title" data-i18n="hero.title">Gostou? Salve.</h1>
+        <p class="hero-lead" data-i18n="hero.desc">Cole o link do vídeo, escolha a qualidade e faça o download.</p>
 
-        <section class="downloader-card" aria-labelledby="quick-download-title" id="download" data-download-card>
-          <p class="eyebrow" data-i18n="download.eyebrow">Multi-plataforma</p>
-          <h2 id="quick-download-title" data-i18n="download.title">Cole seu link</h2>
-          <p class="lead" data-i18n="download.desc">YouTube, Instagram, X e centenas de plataformas.<br>Vídeos públicos e direitos autorais respeitados.</p>
-          <form class="downloader-form" data-download-form>
-            <div class="input-group">
-              <input name="url" type="url" inputmode="url" data-i18n-placeholder="download.placeholder" placeholder="Cole o link público do vídeo..." autocomplete="off" required>
-              <button class="btn" type="button" data-paste data-i18n="download.paste">Colar</button>
+        <section class="download-card" data-download-card aria-labelledby="form-title">
+          <h2 id="form-title" class="sr-only" data-i18n="download.form-title">Baixar vídeo</h2>
+
+          <form class="download-form" data-download-form novalidate>
+            <div class="field" data-url-field>
+              <label class="field-label" for="videoUrl" data-i18n="download.url-label">Link do vídeo</label>
+
+              <div class="url-control" data-url-control>
+                <svg class="url-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M10 13a5 5 0 0 0 7.07.07l2-2a5 5 0 0 0-7.07-7.07l-1.15 1.15"/>
+                  <path d="M14 11a5 5 0 0 0-7.07-.07l-2 2a5 5 0 0 0 7.07 7.07l1.15-1.15"/>
+                </svg>
+
+                <input id="videoUrl" name="url" type="url" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" required aria-required="true" aria-describedby="urlError" data-i18n-placeholder="download.placeholder" placeholder="Cole o link do vídeo aqui...">
+
+                <div class="url-actions">
+                  <button class="clear-btn" type="button" data-clear data-i18n-aria-label="download.clear" hidden>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M18 6 6 18M6 6l12 12"/>
+                    </svg>
+                  </button>
+                  <button class="paste-btn" type="button" data-paste>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <rect x="8" y="2" width="8" height="4" rx="1"/>
+                      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                    </svg>
+                    <span data-i18n="download.paste">Colar</span>
+                  </button>
+                </div>
+              </div>
+
+              <p class="field-error" id="urlError" data-url-error role="alert" hidden></p>
             </div>
-            <div class="form-row">
-              <select name="format" data-i18n-aria-label="download.format.aria-label">
-                <option value="best" data-i18n="download.format.best">Melhor qualidade</option>
-                <option value="720" data-i18n="download.format.720">Até 720p</option>
-                <option value="480" data-i18n="download.format.480">Até 480p</option>
-                <option value="audio" data-i18n="download.format.audio">Somente áudio</option>
-              </select>
-              <button class="btn btn-primary" type="submit" data-i18n="download.submit">Baixar agora</button>
+
+            <div class="quality-row">
+              <label class="quality-label" for="qualitySelect" data-i18n="download.quality-label">Qualidade</label>
+              <div class="select-wrap">
+                <select id="qualitySelect" name="format" data-i18n-aria-label="download.format.aria-label">
+                  <option value="best" data-i18n="download.format.best">Melhor qualidade disponível</option>
+                  <option value="720" data-i18n="download.format.720">Até 720p</option>
+                  <option value="480" data-i18n="download.format.480">Até 480p</option>
+                  <option value="audio" data-i18n="download.format.audio">Somente áudio</option>
+                </select>
+              </div>
             </div>
+
+            <button class="download-btn" type="submit" data-submit>
+              <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/>
+              </svg>
+              <span class="spinner" aria-hidden="true"></span>
+              <span data-submit-label data-i18n="download.submit">Baixar</span>
+            </button>
           </form>
-          <div class="msg" data-message aria-live="polite"></div>
-          <div class="download-progress" data-download-progress hidden>
-            <p class="progress-hint" data-i18n="download.validating">Validando link e preparando o arquivo. Isso pode levar alguns instantes...</p>
-            <div class="progress-track">
+
+          <p class="form-message" data-message role="status" aria-live="polite" hidden></p>
+
+          <div class="process-panel" data-download-progress role="status" aria-live="polite" hidden>
+            <div class="process-head">
+              <span class="spinner spinner-dark" aria-hidden="true"></span>
+              <div class="process-copy">
+                <p class="process-title" data-progress-label data-i18n="download.preparing">Preparando seu vídeo...</p>
+                <p class="process-hint" data-process-hint data-i18n="download.preparing-hint">Isso pode levar alguns instantes. Não feche esta página.</p>
+              </div>
+            </div>
+            <div class="progress-track" data-progress-track role="progressbar" aria-valuemin="0" aria-valuemax="100" data-i18n-aria-label="download.progress-aria" aria-label="Progresso do download">
               <div class="progress-bar" data-progress-bar></div>
             </div>
-            <div class="progress-row">
-              <span class="progress-label" data-progress-label>Processando...</span>
-              <span class="progress-pct" data-progress-pct></span>
+            <p class="progress-meta"><span class="progress-pct" data-progress-pct hidden></span></p>
+          </div>
+
+          <div class="ready-panel" data-download-ready role="status" aria-live="polite" tabindex="-1" hidden>
+            <span class="ready-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="m5 12 4 4L19 6"/>
+              </svg>
+            </span>
+            <div class="ready-copy">
+              <p class="ready-title" data-i18n="download.ready">Arquivo pronto</p>
+              <p class="ready-filename" data-ready-filename></p>
+              <p class="ready-desc" data-i18n="download.ready-desc">Download iniciado. Se o arquivo não apareceu, use o botão abaixo.</p>
+            </div>
+            <div class="ready-actions">
+              <button class="btn btn-primary btn-sm" type="button" data-download-trigger>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M5 21h14"/>
+                </svg>
+                <span data-i18n="download.save">Salvar arquivo</span>
+              </button>
+              <button class="btn btn-ghost btn-sm" type="button" data-download-reset data-i18n="download.new">Novo download</button>
             </div>
           </div>
-          <div class="download-ready" data-download-ready hidden>
-            <button class="btn btn-primary" data-download-trigger>Baixar agora</button>
-          </div>
-          <div class="badges">
-            <div class="badge"><strong data-i18n="download.badge1.title">Multi-plataforma</strong><span data-i18n="download.badge1.desc">YouTube, Instagram, X e muito mais.</span></div>
-            <div class="badge"><strong data-i18n="download.badge2.title">Proteção inteligente</strong><span data-i18n="download.badge2.desc">Rate limit e backoff automáticos.</span></div>
+
+          <div class="platform-strip">
+            <p class="platform-label" data-i18n="download.platforms-label">Plataformas</p>
+            <ul class="platform-inline">
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3Z" fill="currentColor" stroke="none"/>
+                </svg>
+                <span>YouTube</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none"/>
+                </svg>
+                <span>Instagram</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12.5.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07Z" fill="currentColor" stroke="none"/>
+                </svg>
+                <span>TikTok</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M13.5 21v-7h3l.5-4h-3.5V8c0-1.2.3-2 2-2H18V2.2c-.8-.1-1.7-.2-2.6-.2-2.8 0-4.9 1.7-4.9 4.9V10H7v4h3.5v7h3Z" fill="currentColor" stroke="none"/>
+                </svg>
+                <span>Facebook</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+                  <path d="M4 4l16 16M20 4 4 20"/>
+                </svg>
+                <span>X</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <rect x="3" y="6" width="12" height="12" rx="3"/><path d="m15 10 5-3v10l-5-3Z"/>
+                </svg>
+                <span>Kwai</span>
+                <span class="platform-soon" data-i18n="platform.soon">Em breve</span>
+              </li>
+            </ul>
+            <p class="usage-note" data-i18n="download.usage-note">Baixe apenas conteúdo público e com autorização para uso.</p>
           </div>
         </section>
       </div>
     </section>
 
-    <section class="section" id="opcoes">
-      <div class="container">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow" data-i18n="opcoes.eyebrow">Op\u00e7\u00f5es por plataforma</p>
-            <h2 data-i18n="opcoes.title">Escolha a origem do v\u00eddeo</h2>
-            <p data-i18n="opcoes.desc">Selecione a plataforma e cole o link do v\u00eddeo p\u00fablico que deseja baixar.</p>
-          </div>
-        </div>
-        <div class="platform-info-grid">
-          <article class="platform-card">
-            <div class="platform-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 12a29 29 0 0 0 .46 5.58 2.78 2.78 0 0 0 1.94 2C5.12 20 12 20 12 20s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2A29 29 0 0 0 23 12a29 29 0 0 0-.46-5.58z"/>
-                <polygon points="9.75 15.02 15.5 12 9.75 8.98 9.75 15.02" fill="currentColor" stroke="none"/>
-              </svg>
+    <section class="section" id="como-funciona" aria-labelledby="how-title">
+      <div class="section-inner">
+        <h2 id="how-title" data-i18n="como-funciona.title">Como funciona</h2>
+        <ol class="steps">
+          <li class="step">
+            <span class="step-number" aria-hidden="true">1</span>
+            <div>
+              <h3 data-i18n="step1.title">Cole o link</h3>
+              <p data-i18n="step1.desc">Copie o link público do vídeo e cole no campo acima.</p>
             </div>
-            <p class="eyebrow" data-i18n="opcoes.youtube.eyebrow">\u25b6 YouTube</p>
-            <h3 data-i18n="opcoes.youtube.title">YouTube Shorts / V\u00eddeos</h3>
-            <p data-i18n="opcoes.youtube.desc">Cole o link de um Short ou v\u00eddeo do YouTube. Formatos vertical e horizontal suportados.</p>
-          </article>
-
-          <article class="platform-card">
-            <div class="platform-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <rect x="2" y="2" width="20" height="20" rx="5"/>
-                <circle cx="12" cy="12" r="5"/>
-                <circle cx="17" cy="7" r="1.5" fill="currentColor" stroke="none"/>
-              </svg>
+          </li>
+          <li class="step">
+            <span class="step-number" aria-hidden="true">2</span>
+            <div>
+              <h3 data-i18n="step2.title">Escolha a qualidade</h3>
+              <p data-i18n="step2.desc">Selecione a melhor qualidade, uma resolução menor ou apenas o áudio.</p>
             </div>
-            <p class="eyebrow" data-i18n="opcoes.instagram.eyebrow">\u25ce Instagram</p>
-            <h3 data-i18n="opcoes.instagram.title">Instagram Reels / Posts</h3>
-            <p data-i18n="opcoes.instagram.desc">Cole o link de um Reel, post ou v\u00eddeo p\u00fablico do Instagram.</p>
-          </article>
-
-          <article class="platform-card">
-            <div class="platform-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                <path d="M4 4l16 16M20 4L4 20"/>
-              </svg>
+          </li>
+          <li class="step">
+            <span class="step-number" aria-hidden="true">3</span>
+            <div>
+              <h3 data-i18n="step3.title">Baixe o arquivo</h3>
+              <p data-i18n="step3.desc">O iSalvei prepara o arquivo e inicia o download.</p>
             </div>
-            <p class="eyebrow" data-i18n="opcoes.twitter.eyebrow">\ud835\udd4f X / Twitter</p>
-            <h3 data-i18n="opcoes.twitter.title">Posts com m\u00eddia</h3>
-            <p data-i18n="opcoes.twitter.desc">Cole o link de um post p\u00fablico do X/Twitter que contenha v\u00eddeo ou imagem.</p>
-          </article>
-        </div>
-        </div>
-    </section>
-
-    <section class="section" id="como-funciona">
-      <div class="container">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow" data-i18n="como-funciona.eyebrow">Como funciona</p>
-            <h2 data-i18n="como-funciona.title">Tr\u00eas passos objetivos</h2>
-            <p data-i18n="como-funciona.desc">Uma experi\u00eancia direta, pensada para celular e desktop.</p>
-          </div>
-        </div>
-        <div class="steps-grid">
-          <article class="step-card">
-            <div class="step-visual">
-              <div class="step-circle">
-                <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <rect x="9" y="9" width="13" height="13" rx="2"/>
-                  <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-                </svg>
-              </div>
-              <span class="step-number">1</span>
-            </div>
-            <h3 data-i18n="step1.title">Copie a URL</h3>
-            <p data-i18n="step1.desc">Abra a publica\u00e7\u00e3o p\u00fablica e copie o link do v\u00eddeo.</p>
-          </article>
-          <article class="step-card">
-            <div class="step-visual">
-              <div class="step-circle">
-                <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                  <polyline points="17 8 12 3 7 8"/>
-                  <line x1="12" y1="3" x2="12" y2="15"/>
-                </svg>
-              </div>
-              <span class="step-number">2</span>
-            </div>
-            <h3 data-i18n="step2.title">Cole no iSalvei</h3>
-            <p data-i18n="step2.desc">Escolha a qualidade desejada e envie o link.</p>
-          </article>
-          <article class="step-card">
-            <div class="step-visual">
-              <div class="step-circle">
-                <svg class="step-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-                  <polyline points="7 10 12 15 17 10"/>
-                  <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-              </div>
-              <span class="step-number">3</span>
-            </div>
-            <h3 data-i18n="step3.title">Baixe o arquivo</h3>
-            <p data-i18n="step3.desc">O servidor prepara o arquivo e inicia o download no navegador.</p>
-          </article>
-        </div>
-        <div class="steps-cta">
-          <a class="btn btn-primary btn-steps" href="#download" data-i18n="hero.cta-primary">Baixar seu v\u00eddeo agora</a>
-        </div>
+          </li>
+        </ol>
       </div>
     </section>
 
+    <section class="section" id="plataformas" aria-labelledby="platforms-title">
+      <div class="section-inner">
+        <h2 id="platforms-title" data-i18n="plataformas.title">Plataformas</h2>
+        <p class="section-desc" data-i18n="plataformas.desc">Links públicos destas plataformas são aceitos.</p>
+        <ul class="platform-grid">
+          <li class="platform-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="2" y="5" width="20" height="14" rx="4"/><path d="m10 9 5 3-5 3Z" fill="currentColor" stroke="none"/>
+            </svg>
+            <span>YouTube</span>
+          </li>
+          <li class="platform-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none"/>
+            </svg>
+            <span>Instagram</span>
+          </li>
+          <li class="platform-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12.5.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07Z" fill="currentColor" stroke="none"/>
+            </svg>
+            <span>TikTok</span>
+          </li>
+          <li class="platform-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M13.5 21v-7h3l.5-4h-3.5V8c0-1.2.3-2 2-2H18V2.2c-.8-.1-1.7-.2-2.6-.2-2.8 0-4.9 1.7-4.9 4.9V10H7v4h3.5v7h3Z" fill="currentColor" stroke="none"/>
+            </svg>
+            <span>Facebook</span>
+          </li>
+          <li class="platform-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+              <path d="M4 4l16 16M20 4 4 20"/>
+            </svg>
+            <span>X</span>
+          </li>
+          <li class="platform-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="6" width="12" height="12" rx="3"/><path d="m15 10 5-3v10l-5-3Z"/>
+            </svg>
+            <span>Kwai</span>
+            <span class="platform-soon" data-i18n="platform.soon">Em breve</span>
+          </li>
+        </ul>
+      </div>
+    </section>
   </main>
 
-  <footer class="footer">
+  <footer class="site-footer">
     <div class="container footer-inner">
-      <span data-i18n="footer.copyright">\u00a9 2026 iSalvei</span>
-      <span><span data-i18n="footer.madeWith">Feito com</span> <span style="color:var(--danger)">&#10084;</span> <span data-i18n="footer.forCommunity">para a comunidade</span></span>
+      <a class="footer-brand" href="#top">
+        <img src="assets/img/pwa-192x192.png" alt="" width="24" height="24">
+        <span>iSalvei</span>
+      </a>
+      <p class="footer-tagline" data-i18n="footer.tagline">Feito com ♥ para a comunidade.</p>
+      <p class="footer-copy" data-i18n="footer.copyright">© 2026 iSalvei</p>
     </div>
   </footer>
 
-  <script src="assets/js/i18n.js?v=2.1.0"></script>
-  <script src="script.js?v=2.1.0"></script>
-  <script>
-    var langSelect = document.getElementById('langSelect');
-    if (langSelect) {
-      langSelect.value = window.i18n ? window.i18n.getLocale() : 'pt-BR';
-      langSelect.addEventListener('change', function () {
-        if (window.i18n) window.i18n.setLocale(this.value);
-      });
-    }
+  <div class="toast" data-toast role="status" aria-live="polite" hidden></div>
 
-    document.querySelectorAll('[data-nav]').forEach(function(link) {
-      link.addEventListener('click', function(e) {
-        var target = this.getAttribute('data-nav');
-        document.querySelectorAll('[data-nav]').forEach(function(l) { l.classList.remove('active'); });
-        this.classList.add('active');
-        if (target === 'inicio') {
-          e.preventDefault();
-          history.replaceState(null, '', window.location.pathname + window.location.search);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-      });
-    });
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(reg => {
-        reg.addEventListener('updatefound', () => {
-          const newSW = reg.installing;
-          newSW.addEventListener('statechange', () => {
-            if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
-              newSW.postMessage({ type: 'SKIP_WAITING' });
-            }
+  <script src="assets/js/i18n.js?v=3.0.0"></script>
+  <script src="script.js?v=3.0.0"></script>
+  <script>
+    (function () {
+      var langSelect = document.getElementById('langSelect');
+      if (langSelect) {
+        langSelect.value = window.i18n ? window.i18n.getLocale() : 'pt-BR';
+        langSelect.addEventListener('change', function () {
+          if (window.i18n) window.i18n.setLocale(this.value);
+        });
+      }
+
+      if ('serviceWorker' in navigator) {
+        var refreshing = false;
+        var hadController = Boolean(navigator.serviceWorker.controller);
+
+        navigator.serviceWorker.addEventListener('controllerchange', function () {
+          if (!hadController || refreshing) return;
+          refreshing = true;
+          window.location.reload();
+        });
+
+        window.addEventListener('load', function () {
+          navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(function (registration) {
+            registration.update().catch(function (error) {
+              console.warn('Service worker update check failed:', error);
+            });
+            registration.addEventListener('updatefound', function () {
+              var newWorker = registration.installing;
+              if (!newWorker) return;
+              newWorker.addEventListener('statechange', function () {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                  newWorker.postMessage({ type: 'SKIP_WAITING' });
+                }
+              });
+            });
+          }).catch(function (error) {
+            console.error('Service worker registration failed:', error);
           });
         });
-      }).catch(console.error);
-      let refreshing = false;
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
-        if (refreshing) return;
-        refreshing = true;
-        window.location.reload();
-      });
-    }
+      }
+    })();
   </script>
 </body>
 </html>

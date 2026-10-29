@@ -1,14 +1,14 @@
 {
-  "name": "iSalvei — Downloader de vídeos",
+  "name": "iSalvei — Baixar vídeos",
   "short_name": "iSalvei",
-  "description": "Baixe e salve vídeos públicos de redes sociais de forma rápida e gratuita.",
+  "description": "Cole o link do vídeo, escolha a qualidade e faça o download de conteúdo público.",
   "start_url": "/",
   "scope": "/",
   "id": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#07111f",
-  "theme_color": "#07111f",
+  "background_color": "#F5F6F3",
+  "theme_color": "#F5F6F3",
   "categories": ["utilities", "social", "multimedia"],
   "lang": "pt-BR",
   "icons": [
