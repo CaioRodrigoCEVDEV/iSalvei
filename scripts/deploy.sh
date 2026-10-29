@@ -1144,6 +1144,28 @@ refresh_service_pid() {
   esac
 }
 
+discover_ytdlp_bin() {
+  local app_name candidate
+  app_name="$(basename "$APP_DIR" | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9_.-')"
+  local -a candidates=(
+    "$APP_DIR/.venv-ytdlp/bin/yt-dlp"
+    "$APP_DIR/.venv/bin/yt-dlp"
+    "$APP_DIR/venv/bin/yt-dlp"
+    "$APP_DIR/yt-dlp-venv/bin/yt-dlp"
+    "/opt/${app_name}/yt-dlp-venv/bin/yt-dlp"
+    "/opt/${app_name}/.venv-ytdlp/bin/yt-dlp"
+    "/opt/${app_name}/.venv/bin/yt-dlp"
+    "/opt/${app_name}/venv/bin/yt-dlp"
+    "/opt/isalvei/yt-dlp-venv/bin/yt-dlp"
+  )
+  for candidate in "${candidates[@]}"; do
+    [[ -n "$candidate" && -x "$candidate" ]] || continue
+    printf '%s\n' "$candidate"
+    return 0
+  done
+  return 1
+}
+
 setup_runtime_context() {
   log_step "Resolvendo ambiente de execução do backend"
 
@@ -1192,13 +1214,24 @@ setup_runtime_context() {
   fi
 
   YTDLP_CONFIGURED=""
-  if [[ -z "$SERVICE_PID" && "$METHOD" == "systemd" && "${#SYSTEMD_UNITS[@]}" -gt 0 ]]; then
+  if [[ "$METHOD" == "systemd" && "${#SYSTEMD_UNITS[@]}" -gt 0 ]]; then
     YTDLP_CONFIGURED="$(systemd_env_value "${SYSTEMD_UNITS[0]}" YTDLP_PATH || true)"
   fi
   if [[ -z "$YTDLP_CONFIGURED" ]]; then
     YTDLP_CONFIGURED="$(runtime_env_get YTDLP_PATH || true)"
   fi
   YTDLP_CONFIGURED="${YTDLP_CONFIGURED:-yt-dlp}"
+
+  # Instalações antigas usam um venv dedicado (ex.: /opt/isalvei/yt-dlp-venv)
+  # que pode não estar no PATH do serviço. Descobre o binário para não atualizar
+  # o yt-dlp do Python do sistema por engano.
+  if [[ "$YTDLP_CONFIGURED" == "yt-dlp" && "$DEPLOY_YTDLP_METHOD" =~ ^(auto|venv)$ ]]; then
+    local discovered_ytdlp
+    if discovered_ytdlp="$(discover_ytdlp_bin)"; then
+      log "yt-dlp em venv detectado: $discovered_ytdlp"
+      YTDLP_CONFIGURED="$discovered_ytdlp"
+    fi
+  fi
 
   FFMPEG_CONFIGURED=""
   if [[ -z "$SERVICE_PID" && "$METHOD" == "systemd" && "${#SYSTEMD_UNITS[@]}" -gt 0 ]]; then

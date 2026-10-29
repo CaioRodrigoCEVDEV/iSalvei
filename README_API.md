@@ -29,7 +29,7 @@ curl -s -X POST http://localhost:3000/api/register -H "Content-Type: application
 
 # use the key to download
 curl -L -H "X-API-KEY: <YOUR_KEY>" \
-  "http://localhost:3000/api/download?url=https://www.instagram.com/reel/XXXXXXXX/&format=720" \
+  "http://localhost:3000/api/download?url=https://www.youtube.com/watch?v=XXXXXXXXXXX&format=720" \
   --output video.mp4
 ```
 
@@ -44,7 +44,7 @@ As respostas de erro têm o formato:
 | HTTP | Código | Significado |
 |---|---|---|
 | 400 | `URL_REQUIRED`, `URL_NOT_ALLOWED`, `INVALID_FORMAT` | URL/formato inválido ou host não permitido |
-| 403 | `AUTH_REQUIRED`, `GEO_BLOCKED` | Login/cookies necessários ou restrição geográfica. `AUTH_REQUIRED` inclui `loginRequired: true` |
+| 403 | `AUTH_REQUIRED`, `GEO_BLOCKED` | Login/cookies necessários ou restrição geográfica |
 | 404 | `NOT_AVAILABLE` | Conteúdo removido/indisponível |
 | 413 | `FILE_TOO_LARGE` | Acima de `MAX_FILE_SIZE` |
 | 422 | `UNSUPPORTED_PLATFORM`, `NO_VIDEO`, `DRM_PROTECTED`, `LIVE_NOT_SUPPORTED` | Plataforma/conteúdo não suportado |
@@ -55,4 +55,4 @@ As respostas de erro têm o formato:
 ```
 GET /health
 ```
-Retorna `{ "ok": true|false, "checks": { "ytdlp": true, "ffmpeg": true, "ffprobe": true, "tmp": true, "cookies": "not_configured", "instagramLogin": "ready|unavailable|disabled" } }`.
+Retorna `{ "ok": true|false, "checks": { "ytdlp": true, "ffmpeg": true, "ffprobe": true, "tmp": true, "cookies": "not_configured" } }`.

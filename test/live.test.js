@@ -73,34 +73,6 @@ test('LIVE: YouTube 720/480 seleciona H.264 dentro do alvo', { skip: !RUN_LIVE, 
   }
 });
 
-test('LIVE: Instagram Reel vertical mantém 720x1280 em 720 e gera 480x854 em 480', { skip: !RUN_LIVE, timeout: 300000 }, async (t) => {
-  const { config, tmpRoot, downloader } = liveConfig();
-  t.after(() => fs.rmSync(tmpRoot, { recursive: true, force: true }));
-  const url = 'https://www.instagram.com/example/reel/Dezg36US9SW/';
-
-  const hd = await prepareAndProbe(downloader, config, url, '720');
-  t.after(() => hd.result.cleanup());
-  assert.equal(hd.info.width, 720);
-  assert.equal(hd.info.height, 1280);
-  assert.equal(hd.info.videoCodec, 'h264');
-
-  const sd = await prepareAndProbe(downloader, config, url, '480');
-  t.after(() => sd.result.cleanup());
-  assert.equal(sd.info.width, 480);
-  assert.equal(sd.info.height, 854);
-});
-
-test('LIVE: Instagram áudio gera m4a AAC', { skip: !RUN_LIVE, timeout: 180000 }, async (t) => {
-  const { config, tmpRoot, downloader } = liveConfig();
-  t.after(() => fs.rmSync(tmpRoot, { recursive: true, force: true }));
-
-  const { result, info } = await prepareAndProbe(downloader, config, 'https://www.instagram.com/example/reel/Dezg36US9SW/', 'audio');
-  t.after(() => result.cleanup());
-  assert.equal(info.hasVideo, false);
-  assert.equal(info.audioCodec, 'aac');
-  assert.equal(path.extname(result.filePath), '.m4a');
-});
-
 test('LIVE: TikTok entrega H.264/AAC vertical', { skip: !RUN_LIVE, timeout: 240000 }, async (t) => {
   const { config, tmpRoot, downloader } = liveConfig();
   t.after(() => fs.rmSync(tmpRoot, { recursive: true, force: true }));

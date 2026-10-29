@@ -12,15 +12,7 @@ testes e as limitações conhecidas.
   reduzido.
 - `frontend/script.js`: validação local da URL, colar/limpar, submissão única,
   leitura do arquivo com progresso real quando `Content-Length` está disponível,
-  tratamento dos códigos de erro, conexão opcional da conta do Instagram e ação
-  de salvar novamente.
-- Painel de sessão do Instagram (`/api/instagram/session`): mostra o estado da
-  conta conectada. Quando o backend responde `AUTH_REQUIRED` com
-  `loginRequired: true`, abre um diálogo com a tela real de login do Instagram
-  transmitida por SSE (`/api/instagram/login/:id/stream`). O usuário clica na
-  imagem, digita em um campo auxiliar e resolve 2FA/desafios normalmente; o
-  backend captura só os cookies e o download é repetido automaticamente. A opção
-  avançada de colar `sessionid`/`cookies.txt` fica recolhida no mesmo diálogo.
+  tratamento dos códigos de erro e ação de salvar novamente.
 - `frontend/assets/js/i18n.js`: mesmas oito localidades existentes (`pt-BR`,
   `en`, `es`, `fr`, `de`, `it`, `ja`, `zh-CN`).
 - `frontend/sw.js`: cache versionado, precache dos assets novos e atualização do
@@ -52,14 +44,7 @@ testes e as limitações conhecidas.
    novamente ou iniciar outro download.
 6. Erro: mensagens localizadas para URL inválida, conteúdo indisponível/privado,
    plataforma fora do ar, limite de requisições, timeout, falha de rede e falha
-   na preparação. Em `AUTH_REQUIRED` de um link do Instagram, abre o diálogo de
-   conexão da conta; ao conectar, o download é refeito automaticamente. Detalhes
-   técnicos ficam no console e nos logs do servidor.
-7. Sessão do Instagram: desconectada (botão “Conectar conta”), conectada
-   (indicador verde e botão “Desconectar”), carregando o Chromium, tela de login
-   ao vivo, conexão perdida com botão “Tentar novamente”, navegador indisponível
-   (com a opção manual aberta) e erro de cookies inválidos, com foco e
-   `role="alert"`.
+   na preparação. Detalhes técnicos ficam no console e nos logs do servidor.
 
 ## Acessibilidade
 
@@ -81,8 +66,8 @@ npm test
 
 Resultados:
 
-- `npm test`: 61 testes de backend aprovados, 6 testes live ignorados (opt-in) e
-  21 testes de deploy aprovados.
+- `npm test`: 63 testes de backend aprovados, 5 testes live ignorados (opt-in) e
+  31 testes de deploy aprovados.
 - Validação de sintaxe JavaScript: aprovada.
 - Validação estrutural do HTML: aprovada.
 - Testes automatizados de interface em Chrome headless: 79 verificações
@@ -104,7 +89,7 @@ comparação visual durante a refatoração.
 ## Limitações
 
 - **Download externo real:** a suíte padrão usa o backend com `yt-dlp` simulado e
-  valida o contrato HTTP. Os testes live de YouTube, Instagram, TikTok e Facebook
+  valida o contrato HTTP. Os testes live de YouTube, TikTok, Facebook e X/Twitter
   são opt-in (`npm run test:live`) e não foram executados nesta refatoração.
 - **Progresso:** a barra só mostra porcentagem quando o servidor envia
   `Content-Length`. Caso contrário, permanece indeterminada.

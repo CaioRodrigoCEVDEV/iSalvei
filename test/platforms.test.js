@@ -24,8 +24,6 @@ test('detecta plataformas convencionais e links curtos', () => {
     ['https://www.youtube.com/shorts/abc', 'youtube'],
     ['https://m.youtube.com/watch?v=abc', 'youtube'],
     ['https://www.youtube-nocookie.com/embed/abc', 'youtube'],
-    ['https://www.instagram.com/reel/abc/', 'instagram'],
-    ['https://instagr.am/p/abc/', 'instagram'],
     ['https://www.tiktok.com/@user/video/123', 'tiktok'],
     ['https://vm.tiktok.com/abc', 'tiktok'],
     ['https://vt.tiktok.com/abc', 'tiktok'],
@@ -57,7 +55,7 @@ test('não detecta lookalikes, IPs ou hosts desconhecidos', () => {
 });
 
 test('links curtos são identificados', () => {
-  for (const host of ['youtu.be', 'instagr.am', 'vm.tiktok.com', 'fb.watch', 't.co']) {
+  for (const host of ['youtu.be', 'vm.tiktok.com', 'fb.watch', 't.co']) {
     assert.equal(isShortHost(host), true, host);
   }
   assert.equal(isShortHost('youtube.com'), false);
@@ -84,7 +82,7 @@ test('sort de qualidade prioriza resolução e H.264/AAC', () => {
   assert.equal(formatSort('audio'), null);
 });
 
-test('Facebook/TikTok/Instagram usam formato progressivo antes do merge', () => {
+test('Facebook/TikTok usam formato progressivo antes do merge', () => {
   const platform = detectPlatform('https://www.tiktok.com/@a/video/1');
   assert.equal(baseFormatSelector(platform, 'best'), 'b[ext=mp4]/b/bv*+ba');
   assert.equal(baseFormatSelector(detectPlatform('https://youtu.be/a'), 'best'), 'bv*+ba/b');
@@ -104,36 +102,14 @@ test('metadata args não contêm a flag antiga do YouTube e incluem runtime Node
   assert.equal(args.at(-1), 'https://www.youtube.com/watch?v=abc');
 });
 
-test('Instagram usa impersonation e prioriza cookies do usuário', () => {
-  const platform = detectPlatform('https://www.instagram.com/reel/a/');
-  const userConfig = loadConfig({ COOKIES_FILE: '/tmp/cookies-global.txt' });
-  const args = buildMetadataArgs(
-    'https://www.instagram.com/reel/a/',
-    platform,
-    '720',
-    userConfig,
-    { cookiesFile: '/tmp/ig-user.txt' }
-  );
-
-  assert.ok(args.includes('--impersonate'));
-  assert.equal(args[args.indexOf('--impersonate') + 1], 'chrome');
-  assert.ok(args.includes('--cookies'));
-  assert.equal(args[args.indexOf('--cookies') + 1], '/tmp/ig-user.txt');
-  assert.ok(!args.includes('/tmp/cookies-global.txt'));
-
-  const disabled = loadConfig({ IG_IMPERSONATE: '' });
-  const withoutImpersonate = buildMetadataArgs('https://www.instagram.com/reel/a/', platform, '720', disabled);
-  assert.ok(!withoutImpersonate.includes('--impersonate'));
-});
-
 test('download args de áudio extraem m4a e usam merge mp4 no vídeo', () => {
-  const platform = detectPlatform('https://www.instagram.com/reel/a/');
-  const audio = buildDownloadArgs('https://www.instagram.com/reel/a/', platform, 'audio', config, '/tmp/%(id)s.%(ext)s');
+  const platform = detectPlatform('https://www.tiktok.com/@a/video/1');
+  const audio = buildDownloadArgs('https://www.tiktok.com/@a/video/1', platform, 'audio', config, '/tmp/%(id)s.%(ext)s');
   assert.ok(audio.includes('-x'));
   assert.ok(audio.includes('m4a'));
   assert.ok(audio.includes('--audio-quality'));
 
-  const video = buildDownloadArgs('https://www.instagram.com/reel/a/', platform, 'best', config, '/tmp/%(id)s.%(ext)s');
+  const video = buildDownloadArgs('https://www.tiktok.com/@a/video/1', platform, 'best', config, '/tmp/%(id)s.%(ext)s');
   assert.ok(video.includes('--merge-output-format'));
   assert.ok(video.includes('mp4'));
   assert.ok(!video.includes('-x'));

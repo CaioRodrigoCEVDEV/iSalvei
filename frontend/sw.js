@@ -1,12 +1,12 @@
-const CACHE_NAME = 'isalvei-v7-2026-10';
+const CACHE_NAME = 'isalvei-v8-2026-10';
 const OFFLINE_URL = '/';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/assets/css/style.css?v=3.2.0',
-  '/assets/js/i18n.js?v=3.2.0',
-  '/script.js?v=3.2.0',
+  '/assets/css/style.css?v=3.3.0',
+  '/assets/js/i18n.js?v=3.3.0',
+  '/script.js?v=3.3.0',
   '/assets/img/pwa-192x192.png',
   '/assets/img/pwa-512x512.png',
   '/assets/img/apple-touch-icon.png',
@@ -59,9 +59,6 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
-
-  // SSE do login assistido: deixa o navegador cuidar do streaming direto.
-  if (url.pathname.startsWith('/api/instagram/login/') && url.pathname.endsWith('/stream')) return;
 
   if (request.mode === 'navigate') {
     event.respondWith(

@@ -89,53 +89,18 @@ test('vídeo vertical 720x1280 não é reduzido em 720', { skip: !hasFfmpeg }, a
   });
   t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
 
-  const result = await downloader.prepare('https://www.instagram.com/reel/abc/', '720');
+  const result = await downloader.prepare('https://www.tiktok.com/@a/video/1', '720');
   const info = extractMediaInfo(await probeMedia(result.filePath, config), result.filePath);
   assert.equal(info.width, 720);
   assert.equal(info.height, 1280);
   await result.cleanup();
 });
 
-test('cookies do Instagram viram arquivo temporário e são removidos', { skip: !hasFfmpeg }, async (t) => {
-  const ctx = setup(t);
-  if (!ctx) return;
-
-  const argsFile = path.join(ctx.base, 'args.log');
-  const cookiesCopy = path.join(ctx.base, 'cookies-copy.txt');
-  ctx.env.FAKE_ARGS_FILE = argsFile;
-  ctx.env.FAKE_COOKIES_COPY = cookiesCopy;
-
-  const downloader = createDownloader(ctx.config, {
-    env: ctx.env,
-    resolver: async () => [{ address: '93.184.216.34', family: 4 }],
-    fetchImpl: async () => ({ status: 200, headers: { get: () => null }, body: { cancel() {} } }),
-    logger: { warn() {}, error() {} },
-  });
-
-  const result = await downloader.prepare('https://www.instagram.com/reel/abc/', 'best', {
-    instagramCookies: '.instagram.com\tTRUE\t/\tTRUE\t0\tsessionid\t123%3Aabc\n',
-  });
-  await result.cleanup();
-
-  const calls = fs.readFileSync(argsFile, 'utf8').trim().split('\n').map((line) => JSON.parse(line));
-  assert.ok(calls.length >= 2);
-  for (const args of calls) {
-    const index = args.indexOf('--cookies');
-    assert.ok(index >= 0);
-    assert.match(args[index + 1], /ig-cookies-/);
-    assert.ok(args.includes('--impersonate'));
-
-    const cookiePath = args[index + 1];
-    assert.equal(fs.existsSync(cookiePath), false);
-  }
-  assert.match(fs.readFileSync(cookiesCopy, 'utf8'), /\tsessionid\t123%3Aabc/);
-});
-
 test('erro de autenticação não é repetido', { skip: !hasFfmpeg }, async (t) => {
   const ctx = setup(t);
   if (!ctx) return;
   ctx.env.FAKE_EXIT = '1';
-  ctx.env.FAKE_STDERR = 'ERROR: [Instagram] abc: Requested content is not available, rate-limit reached or login required. Use --cookies';
+  ctx.env.FAKE_STDERR = 'ERROR: [youtube] abc: This video is private';
 
   const downloader = createDownloader(ctx.config, {
     env: ctx.env,
@@ -144,7 +109,7 @@ test('erro de autenticação não é repetido', { skip: !hasFfmpeg }, async (t) 
     logger: { warn() {}, error() {} },
   });
   await assert.rejects(
-    () => downloader.prepare('https://www.instagram.com/reel/abc/', 'best'),
+    () => downloader.prepare('https://www.youtube.com/watch?v=abc', 'best'),
     (error) => error.statusCode === 403 && error.code === 'AUTH_REQUIRED'
   );
 
@@ -246,7 +211,7 @@ test('metadados de imagem não tentam baixar vídeo', { skip: !hasFfmpeg }, asyn
     logger: { warn() {}, error() {} },
   });
   await assert.rejects(
-    () => downloader.prepare('https://www.instagram.com/p/abc/', 'best'),
+    () => downloader.prepare('https://www.youtube.com/watch?v=abc', 'best'),
     (error) => error.statusCode === 422 && error.code === 'NO_VIDEO'
   );
   assert.equal(fs.existsSync(ctx.marker) ? fs.readFileSync(ctx.marker, 'utf8').includes('download') : false, false);

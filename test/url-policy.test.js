@@ -37,8 +37,6 @@ test('aceita URLs convencionais e curtas das plataformas', async () => {
   const urls = [
     'https://www.youtube.com/watch?v=jNQXAC9IVRw',
     'https://youtu.be/jNQXAC9IVRw',
-    'https://www.instagram.com/reel/Dezg36US9SW/',
-    'https://instagr.am/p/Dezg36US9SW/',
     'https://www.tiktok.com/@tiktok/video/6718335390845095173',
     'https://vm.tiktok.com/ZSrjTVXjN',
     'https://www.facebook.com/watch/?v=10153231379946729',

@@ -36,14 +36,6 @@ function extrairID() {
 
                     if (matchX) {
                         id = matchX[1];
-                    } else {
-                        // Regex para URL do Instagram
-                        var regexInstagram = /(?:https?:\/\/(?:www\.)?instagram\.com\/(?:p|reel|tv)\/)([^"&?\/\s]+)/;
-                        var matchInstagram = url.match(regexInstagram);
-
-                        if (matchInstagram) {
-                            id = matchInstagram[1];
-                        }
                     }
                 }
             }

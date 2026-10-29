@@ -171,10 +171,6 @@ DEPLOY_DOCKER_PORTS="0.0.0.0:3000:3000" \
   Python gerenciado pelo sistema operacional. Ele instala
   `yt-dlp[default,curl-cffi]` (EJS do YouTube e impersonation do TikTok) e usa
   Node 22 como runtime JavaScript.
-- O login assistido do Instagram usa Chromium do sistema
-  (`IG_BROWSER_PATH=/usr/bin/chromium` na imagem). Cada janela de login consome
-  memória de um Chromium headless; mantenha `IG_LOGIN_MAX_SESSIONS` baixo (2 por
-  padrão) e reserve pelo menos ~1 GB de RAM para picos de login.
 - Health check: tenta a porta publicada; se não houver porta publicada, executa
   o health check dentro do container com `docker exec`.
 - `--yt-dlp-only` no Docker sempre recria o container (é necessário para trocar
@@ -207,6 +203,17 @@ O método é detectado no executável realmente resolvido para o backend:
 | `apt` | `dpkg -S` aponta pacote `yt-dlp` | `apt-get update` + `apt-get install --only-upgrade yt-dlp` | não |
 | `standalone` | binário grande/ELF/zipapp | download do release + checksum SHA-256 + troca atômica | sim |
 | Docker | container | rebuild da imagem com `YTDLP_VERSION` | sim |
+
+Descoberta do executável em instalações não-Docker:
+
+- `YTDLP_PATH` tem precedência quando definido no ambiente, no `.env` ou no
+  `Environment` da unidade systemd.
+- Sem `YTDLP_PATH`, o script procura um yt-dlp de venv em locais comuns, como
+  `$APP_DIR/.venv-ytdlp/bin/yt-dlp`, `$APP_DIR/yt-dlp-venv/bin/yt-dlp` e
+  `/opt/<nome-do-app>/yt-dlp-venv/bin/yt-dlp`. Isso cobre instalações em que o
+  venv não está no `PATH` do serviço.
+- O método (`pip`, `venv`, `pipx`, `apt` ou `standalone`) continua sendo
+  detectado pelo próprio executável resolvido.
 
 Versão mais recente em instalações `pip`/`venv`/`pipx`:
 
@@ -256,12 +263,6 @@ comparada com a alvo; divergência causa falha e rollback.
 | `API_DB_PATH` | banco SQLite; backup inclui esse arquivo |
 | `TMP_DIR` | diretório temporário dos downloads |
 | `COOKIES_FILE` | cookies globais do yt-dlp (copiado se estiver em `APP_DIR`) |
-| `IG_IMPERSONATE` | alvo de impersonation do Instagram (`chrome` por padrão; vazio desativa) |
-| `IG_SESSION_TTL` | validade em ms da sessão de conta conectada no app (padrão 12h) |
-| `IG_LOGIN_ENABLED` | habilita o login assistido no app (padrão `true`) |
-| `IG_BROWSER_PATH` | caminho do Chromium/Chrome (vazio auto-detecta) |
-| `IG_LOGIN_TTL`, `IG_LOGIN_MAX_SESSIONS` | validade e concorrência das janelas de login |
-| `IG_LOGIN_RATE_MAX`, `IG_LOGIN_RATE_WINDOW_MS` | limite de abertura de logins por IP |
 | `YTDLP_PATH` | executável do yt-dlp usado pelo backend |
 | `FFMPEG_PATH` | executável do FFmpeg |
 | `FFPROBE_PATH` | executável do ffprobe |

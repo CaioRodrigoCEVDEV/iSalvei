@@ -122,6 +122,21 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# Descoberta de yt-dlp em venv fora do PATH
+# ---------------------------------------------------------------------------
+mkdir -p "$TMP/venvapp/.venv-ytdlp/bin"
+printf '#!/usr/bin/env bash\n' > "$TMP/venvapp/.venv-ytdlp/bin/yt-dlp"
+chmod +x "$TMP/venvapp/.venv-ytdlp/bin/yt-dlp"
+venv_ytdlp="$(
+  bash -c '
+    source "$1"
+    APP_DIR="$2"
+    discover_ytdlp_bin
+  ' _ "$DEPLOY" "$TMP/venvapp"
+)"
+assert_eq "$venv_ytdlp" "$TMP/venvapp/.venv-ytdlp/bin/yt-dlp" "descobre yt-dlp em venv local"
+
+# ---------------------------------------------------------------------------
 # Versão do yt-dlp compatível com o Python do backend
 # ---------------------------------------------------------------------------
 mkdir -p "$TMP/py"

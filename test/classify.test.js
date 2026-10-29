@@ -8,7 +8,6 @@ const { sanitizeLog } = require('../lib/errors');
 const { detectPlatform } = require('../lib/platforms');
 
 const youtube = detectPlatform('https://youtube.com/watch?v=abc');
-const instagram = detectPlatform('https://instagram.com/reel/abc/');
 const tiktok = detectPlatform('https://tiktok.com/@a/video/1');
 const facebook = detectPlatform('https://facebook.com/watch/?v=1');
 
@@ -17,29 +16,6 @@ test('YouTube indisponível vira 404 não retryable', () => {
   assert.equal(error.statusCode, 404);
   assert.equal(error.code, 'NOT_AVAILABLE');
   assert.equal(error.retryable, false);
-});
-
-test('Instagram com sessão inválida e JSON quebrado vira AUTH_REQUIRED', () => {
-  const error = classifyYtDlpFailure(
-    'ERROR: [Instagram] abc: Failed to parse JSON (caused by JSONDecodeError("Expecting value in \'\'")); please report this issue',
-    { platform: instagram, hasCookies: true }
-  );
-  assert.equal(error.statusCode, 403);
-  assert.equal(error.code, 'AUTH_REQUIRED');
-  assert.match(error.message, /sessão do Instagram/);
-});
-
-test('Instagram login/empty media vira 403 e não retryable', () => {
-  const messages = [
-    'ERROR: [Instagram] abc: Requested content is not available, rate-limit reached or login required. Use --cookies-from-browser or --cookies for the authentication.',
-    'ERROR: [Instagram] abc: Instagram sent an empty media response. Check if this post is accessible in your browser without being logged-in.',
-  ];
-  for (const message of messages) {
-    const error = classifyYtDlpFailure(message, { platform: instagram });
-    assert.equal(error.statusCode, 403);
-    assert.equal(error.code, 'AUTH_REQUIRED');
-    assert.equal(error.retryable, false);
-  }
 });
 
 test('TikTok IP bloqueado vira 403 geográfico', () => {
@@ -56,7 +32,7 @@ test('Facebook cannot parse vira 502 claro', () => {
 });
 
 test('rate limit real vira 429 retryable', () => {
-  const error = classifyYtDlpFailure('ERROR: HTTP Error 429: Too Many Requests', { platform: instagram });
+  const error = classifyYtDlpFailure('ERROR: HTTP Error 429: Too Many Requests', { platform: tiktok });
   assert.equal(error.statusCode, 429);
   assert.equal(error.code, 'PLATFORM_RATE_LIMITED');
   assert.equal(error.retryable, true);
