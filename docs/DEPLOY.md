@@ -14,6 +14,10 @@ ambiente de produção.
 ## 1. Arquitetura encontrada
 
 - Aplicação Node.js/Express. O `package.json` atual exige **Node.js >= 22**.
+- `better-sqlite3` está fixado em `12.11.1`: o prebuild dessa versão exige
+  glibc >= 2.29 e funciona em hosts como Ubuntu 20.04. A série `13.x` traz
+  prebuild com glibc >= 2.33/2.34 e falha nesses hosts
+  (`version 'GLIBC_2.33' not found`); não atualize sem subir a distro.
 - Entrada principal: `server.js` (`npm start`, `package.json > main`).
 - Processo opcional de API: `api_server.js` (`npm run start:api`), com banco
   SQLite em `API_DB_PATH` (padrão `./data/api.db`).
