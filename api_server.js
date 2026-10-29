@@ -8,7 +8,12 @@ const Database = require('better-sqlite3');
 
 const { loadConfig } = require('./lib/config');
 const { createDownloader } = require('./lib/downloader');
-const { createDownloadHandler, createHealthHandler } = require('./lib/http');
+const {
+  createDownloadHandler,
+  createHealthHandler,
+  createInstagramSessionHandlers,
+} = require('./lib/http');
+const { createSessionStore } = require('./lib/instagram-session');
 
 const DB_PATH = process.env.API_DB_PATH || path.join(__dirname, 'data', 'api.db');
 
@@ -39,14 +44,20 @@ function createApiApp(options = {}) {
   const config = options.config || loadConfig();
   const downloader = options.downloader || createDownloader(config);
   const db = options.db || openDatabase(options.dbPath || DB_PATH);
+  const sessionStore = options.sessionStore || createSessionStore({ ttlMs: config.instagramSessionTtl });
 
   const app = express();
   app.set('trust proxy', config.trustProxy);
-  app.use(express.json());
+  app.use(express.json({ limit: '128kb' }));
   app.use(express.static(path.join(__dirname, 'frontend')));
 
   const healthHandler = createHealthHandler({ downloader });
   app.get('/health', healthHandler);
+
+  const instagramHandlers = createInstagramSessionHandlers({ store: sessionStore, config });
+  app.get('/api/instagram/session', instagramHandlers.status);
+  app.post('/api/instagram/session', instagramHandlers.create);
+  app.delete('/api/instagram/session', instagramHandlers.remove);
 
   function createApiKey(quota = 10) {
     const key = crypto.randomUUID().replace(/-/g, '');
@@ -95,10 +106,10 @@ function createApiApp(options = {}) {
     res.json({ api_key: key, quota_per_minute: quota });
   });
 
-  const downloadHandler = createDownloadHandler({ config, downloader });
+  const downloadHandler = createDownloadHandler({ config, downloader, sessionStore });
   app.get('/api/download', requireApiKey, downloadHandler);
 
-  return { app, config, downloader, db };
+  return { app, config, downloader, db, sessionStore };
 }
 
 if (require.main === module) {

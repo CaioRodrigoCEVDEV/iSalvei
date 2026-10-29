@@ -96,6 +96,41 @@ test('vídeo vertical 720x1280 não é reduzido em 720', { skip: !hasFfmpeg }, a
   await result.cleanup();
 });
 
+test('cookies do Instagram viram arquivo temporário e são removidos', { skip: !hasFfmpeg }, async (t) => {
+  const ctx = setup(t);
+  if (!ctx) return;
+
+  const argsFile = path.join(ctx.base, 'args.log');
+  const cookiesCopy = path.join(ctx.base, 'cookies-copy.txt');
+  ctx.env.FAKE_ARGS_FILE = argsFile;
+  ctx.env.FAKE_COOKIES_COPY = cookiesCopy;
+
+  const downloader = createDownloader(ctx.config, {
+    env: ctx.env,
+    resolver: async () => [{ address: '93.184.216.34', family: 4 }],
+    fetchImpl: async () => ({ status: 200, headers: { get: () => null }, body: { cancel() {} } }),
+    logger: { warn() {}, error() {} },
+  });
+
+  const result = await downloader.prepare('https://www.instagram.com/reel/abc/', 'best', {
+    instagramCookies: '.instagram.com\tTRUE\t/\tTRUE\t0\tsessionid\t123%3Aabc\n',
+  });
+  await result.cleanup();
+
+  const calls = fs.readFileSync(argsFile, 'utf8').trim().split('\n').map((line) => JSON.parse(line));
+  assert.ok(calls.length >= 2);
+  for (const args of calls) {
+    const index = args.indexOf('--cookies');
+    assert.ok(index >= 0);
+    assert.match(args[index + 1], /ig-cookies-/);
+    assert.ok(args.includes('--impersonate'));
+
+    const cookiePath = args[index + 1];
+    assert.equal(fs.existsSync(cookiePath), false);
+  }
+  assert.match(fs.readFileSync(cookiesCopy, 'utf8'), /\tsessionid\t123%3Aabc/);
+});
+
 test('erro de autenticação não é repetido', { skip: !hasFfmpeg }, async (t) => {
   const ctx = setup(t);
   if (!ctx) return;

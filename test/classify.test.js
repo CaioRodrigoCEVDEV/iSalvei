@@ -19,6 +19,16 @@ test('YouTube indisponível vira 404 não retryable', () => {
   assert.equal(error.retryable, false);
 });
 
+test('Instagram com sessão inválida e JSON quebrado vira AUTH_REQUIRED', () => {
+  const error = classifyYtDlpFailure(
+    'ERROR: [Instagram] abc: Failed to parse JSON (caused by JSONDecodeError("Expecting value in \'\'")); please report this issue',
+    { platform: instagram, hasCookies: true }
+  );
+  assert.equal(error.statusCode, 403);
+  assert.equal(error.code, 'AUTH_REQUIRED');
+  assert.match(error.message, /sessão do Instagram/);
+});
+
 test('Instagram login/empty media vira 403 e não retryable', () => {
   const messages = [
     'ERROR: [Instagram] abc: Requested content is not available, rate-limit reached or login required. Use --cookies-from-browser or --cookies for the authentication.',

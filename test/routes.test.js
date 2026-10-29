@@ -17,7 +17,12 @@ function fakeDownloader(filePath, options = {}) {
     calls: [],
     get cleanupCalls() { return cleanupCalls; },
     async prepare(url, quality, opts = {}) {
-      this.calls.push({ url, quality, requestId: opts.requestId });
+      this.calls.push({
+        url,
+        quality,
+        requestId: opts.requestId,
+        instagramCookies: opts.instagramCookies,
+      });
       if (options.error) throw options.error;
       if (options.waitMs) await new Promise((resolve) => setTimeout(resolve, options.waitMs));
       return {
@@ -176,6 +181,82 @@ test('rota legada /download usa o mesmo handler', async (t) => {
   assert.equal(response.status, 200);
   assert.equal(response.headers.get('content-type'), 'video/mp4');
   assert.equal(await response.text(), 'fake video bytes');
+});
+
+test('sessão do Instagram conecta, usa no download e desconecta', async (t) => {
+  const file = tempMedia(t);
+  const downloader = fakeDownloader(file);
+  const { app } = createApp({ config: makeConfig({ RATE_LIMIT_MAX: '100' }), downloader });
+  const { server, base } = await listen(app);
+  t.after(() => server.close());
+
+  const before = await fetch(`${base}/api/instagram/session`);
+  assert.equal((await before.json()).connected, false);
+
+  const connect = await fetch(`${base}/api/instagram/session`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ cookies: '123456%3Aabcdef' }),
+  });
+  assert.equal(connect.status, 200);
+  const connected = await connect.json();
+  assert.equal(connected.connected, true);
+  assert.equal(connected.userId, '123456');
+
+  const cookie = String(connect.headers.get('set-cookie')).split(';')[0];
+  assert.match(cookie, /^isalvei_ig=[a-f0-9]{64}$/);
+  assert.match(connect.headers.get('set-cookie'), /HttpOnly/);
+
+  const status = await fetch(`${base}/api/instagram/session`, { headers: { cookie } });
+  assert.equal((await status.json()).connected, true);
+
+  const download = await fetch(
+    `${base}/api/download?url=${encodeURIComponent('https://www.instagram.com/reel/abc/')}`,
+    { headers: { cookie } }
+  );
+  assert.equal(download.status, 200);
+  await download.text();
+
+  assert.equal(downloader.calls.length, 1);
+  assert.match(downloader.calls[0].instagramCookies, /\tsessionid\t123456%3Aabcdef/);
+
+  const remove = await fetch(`${base}/api/instagram/session`, { method: 'DELETE', headers: { cookie } });
+  assert.equal(remove.status, 200);
+  assert.match(remove.headers.get('set-cookie'), /Max-Age=0/);
+
+  const after = await fetch(`${base}/api/instagram/session`, { headers: { cookie } });
+  assert.equal((await after.json()).connected, false);
+});
+
+test('sessão do Instagram rejeita cookies sem sessionid', async (t) => {
+  const file = tempMedia(t);
+  const downloader = fakeDownloader(file);
+  const { app } = createApp({ config: makeConfig({ RATE_LIMIT_MAX: '100' }), downloader });
+  const { server, base } = await listen(app);
+  t.after(() => server.close());
+
+  const response = await fetch(`${base}/api/instagram/session`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ cookies: 'csrftoken=abc' }),
+  });
+  assert.equal(response.status, 400);
+  assert.equal((await response.json()).code, 'INVALID_COOKIES');
+});
+
+test('erro de autenticação sinaliza loginRequired', async (t) => {
+  const file = tempMedia(t);
+  const downloader = fakeDownloader(file, {
+    error: appError(403, 'AUTH_REQUIRED', 'Conteúdo privado.'),
+  });
+  const { app } = createApp({ config: makeConfig({ RATE_LIMIT_MAX: '100' }), downloader });
+  const { server, base } = await listen(app);
+  t.after(() => server.close());
+
+  const response = await fetch(`${base}/api/download?url=${encodeURIComponent('https://www.instagram.com/reel/abc/')}`);
+  assert.equal(response.status, 403);
+  const body = await response.json();
+  assert.equal(body.loginRequired, true);
 });
 
 test('erro 502 usa mensagem segura sem vazar stderr', async (t) => {

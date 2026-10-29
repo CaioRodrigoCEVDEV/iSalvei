@@ -18,6 +18,15 @@ function sleepSync(ms) {
 }
 
 const exitCode = Number(process.env.FAKE_EXIT || 0);
+if (process.env.FAKE_ARGS_FILE) {
+  fs.appendFileSync(process.env.FAKE_ARGS_FILE, JSON.stringify(process.argv.slice(2)) + '\n');
+}
+if (process.env.FAKE_COOKIES_COPY) {
+  const cookiesIndex = process.argv.indexOf('--cookies');
+  if (cookiesIndex >= 0 && process.argv[cookiesIndex + 1]) {
+    fs.copyFileSync(process.argv[cookiesIndex + 1], process.env.FAKE_COOKIES_COPY);
+  }
+}
 if (process.env.FAKE_MARKER) {
   fs.appendFileSync(process.env.FAKE_MARKER, process.argv.includes('--dump-single-json') ? 'metadata\n' : 'download\n');
 }

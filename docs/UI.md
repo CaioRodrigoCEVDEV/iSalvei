@@ -12,7 +12,12 @@ testes e as limitações conhecidas.
   reduzido.
 - `frontend/script.js`: validação local da URL, colar/limpar, submissão única,
   leitura do arquivo com progresso real quando `Content-Length` está disponível,
-  tratamento dos códigos de erro e ação de salvar novamente.
+  tratamento dos códigos de erro, conexão opcional da conta do Instagram e ação
+  de salvar novamente.
+- Painel de sessão do Instagram (`/api/instagram/session`): mostra o estado da
+  conta conectada e abre um diálogo para colar `sessionid`/`cookies.txt` quando o
+  backend responde `AUTH_REQUIRED` com `loginRequired: true`. Após conectar, o
+  download é repetido automaticamente.
 - `frontend/assets/js/i18n.js`: mesmas oito localidades existentes (`pt-BR`,
   `en`, `es`, `fr`, `de`, `it`, `ja`, `zh-CN`).
 - `frontend/sw.js`: cache versionado, precache dos assets novos e atualização do
@@ -44,7 +49,12 @@ testes e as limitações conhecidas.
    novamente ou iniciar outro download.
 6. Erro: mensagens localizadas para URL inválida, conteúdo indisponível/privado,
    plataforma fora do ar, limite de requisições, timeout, falha de rede e falha
-   na preparação. Detalhes técnicos ficam no console e nos logs do servidor.
+   na preparação. Em `AUTH_REQUIRED` de um link do Instagram, abre o diálogo de
+   conexão da conta; ao conectar, o download é refeito automaticamente. Detalhes
+   técnicos ficam no console e nos logs do servidor.
+7. Sessão do Instagram: desconectada (botão “Conectar conta”), conectada
+   (indicador verde e botão “Desconectar”) e erro de cookies inválidos dentro do
+   diálogo, com foco e `role="alert"`.
 
 ## Acessibilidade
 

@@ -23,7 +23,7 @@ Inicie o backend com `npm start` e acesse `http://localhost:3000` no navegador. 
 | Plataforma | Suporte | Observação |
 |---|---|---|
 | YouTube | Vídeos, Shorts, `youtu.be`, ao vivo não | Requer Node 22+ ou Deno para o runtime JS do yt-dlp. Em IPs de datacenter pode exigir cookies/PO token |
-| Instagram | Reels e posts públicos | Conteúdo privado/login exige `COOKIES_FILE` |
+| Instagram | Reels e posts públicos | Usa impersonation (`curl-cffi`); conteúdo restrito pode conectar a conta pelo app |
 | TikTok | Vídeos e links `vm/vt.tiktok.com` | Pode exigir impersonation (`curl-cffi`) |
 | Facebook | Vídeos, Reels e `fb.watch` | Conteúdo privado exige autenticação |
 | X/Twitter | Posts com vídeo | Depende do extractor do yt-dlp |
@@ -36,15 +36,42 @@ Inicie o backend com `npm start` e acesse `http://localhost:3000` no navegador. 
 - Para YouTube/TikTok completos, instale `yt-dlp[default,curl-cffi]` (Docker, venv ou pipx). Pacotes `apt`/standalone antigos podem não ter o runtime EJS nem impersonation.
 - Conteúdo privado, removido, com DRM, ao vivo ou sem vídeo retorna erro claro e não é repetido indefinidamente.
 
-### Cookies (conteúdo restrito)
+### Instagram: Reels públicos e conta conectada
 
-O Instagram e o Facebook podem exigir login. Monte um arquivo Netscape `cookies.txt` fora do repositório e configure:
+O Instagram passou a bloquear requisições anônimas sem fingerprint de navegador.
+O backend envia `--impersonate chrome` para o yt-dlp; com `curl-cffi` instalado
+(a imagem Docker e a instalação recomendada já incluem), Reels públicos baixam
+sem login.
+
+Se o conteúdo continuar exigindo autenticação, o app mostra o botão
+**Conectar conta** (ou abre o diálogo automaticamente após um erro
+`AUTH_REQUIRED`). O usuário cola o `sessionid`/`cookies.txt` exportado do próprio
+navegador — **a senha nunca é solicitada**. A sessão:
+
+- fica somente na memória do servidor (não vai para o banco nem para logs);
+- é usada apenas em downloads do Instagram;
+- expira automaticamente (`IG_SESSION_TTL`, padrão 12 horas) e pode ser
+  desconectada a qualquer momento.
+
+Como a sessão vive em memória, reinícios do processo desconectam a conta e
+implantação com múltiplas instâncias exige sticky sessions (ou um store
+compartilhado).
+
+O uso de cookies de conta é opcional e por conta e risco do usuário: o Instagram
+pode sinalizar contas usadas em automação. Respeite os termos da plataforma e
+baixe apenas conteúdo que você tem direito de salvar.
+
+### Cookies globais (fallback do servidor)
+
+Para uma conta de serviço compartilhada, ainda é possível montar um arquivo
+Netscape `cookies.txt` fora do repositório:
 
 ```bash
 COOKIES_FILE=/run/secrets/cookies.txt
 ```
 
-Nunca versione esse arquivo. Os cookies não são registrados nos logs.
+Cookies do usuário têm precedência sobre esse arquivo. Nunca versione o arquivo
+e saiba que cookies não são registrados nos logs.
 
 
 ## 🛠️ Tecnologias Utilizadas

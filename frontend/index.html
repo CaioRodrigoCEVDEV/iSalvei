@@ -20,7 +20,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link href="assets/css/style.css?v=3.0.0" rel="stylesheet">
+  <link href="assets/css/style.css?v=3.1.0" rel="stylesheet">
 </head>
 <body id="top">
   <header class="site-header">
@@ -123,6 +123,17 @@
           </form>
 
           <p class="form-message" data-message role="status" aria-live="polite" hidden></p>
+
+          <div class="ig-session" data-ig-session hidden>
+            <span class="ig-session-dot" data-ig-dot aria-hidden="true"></span>
+            <p class="ig-session-status" data-ig-status></p>
+            <button class="ig-session-btn" type="button" data-ig-connect>
+              <span data-i18n="instagram.connect">Conectar conta</span>
+            </button>
+            <button class="ig-session-btn ig-session-btn-muted" type="button" data-ig-disconnect hidden>
+              <span data-i18n="instagram.disconnect">Desconectar</span>
+            </button>
+          </div>
 
           <div class="process-panel" data-download-progress role="status" aria-live="polite" hidden>
             <div class="process-head">
@@ -296,8 +307,38 @@
 
   <div class="toast" data-toast role="status" aria-live="polite" hidden></div>
 
-  <script src="assets/js/i18n.js?v=3.0.0"></script>
-  <script src="script.js?v=3.0.0"></script>
+  <div class="ig-modal" data-ig-modal hidden>
+    <div class="ig-modal-card" role="dialog" aria-modal="true" aria-labelledby="igModalTitle" aria-describedby="igModalDesc">
+      <button class="ig-modal-close" type="button" data-ig-cancel data-i18n-aria-label="instagram.modal.cancel" aria-label="Cancelar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true">
+          <path d="M18 6 6 18M6 6l12 12"/>
+        </svg>
+      </button>
+
+      <h2 id="igModalTitle" data-i18n="instagram.modal.title">Conectar conta do Instagram</h2>
+      <p id="igModalDesc" class="ig-modal-desc" data-i18n="instagram.modal.desc">O iSalvei não pede sua senha. Cole o cookie de sessão exportado do seu navegador.</p>
+
+      <ol class="ig-modal-steps">
+        <li data-i18n="instagram.modal.step1">Entre no Instagram pelo navegador.</li>
+        <li data-i18n="instagram.modal.step2">Abra as ferramentas de desenvolvedor (F12) → Application → Cookies → instagram.com.</li>
+        <li data-i18n="instagram.modal.step3">Copie o valor do cookie sessionid (ou exporte um cookies.txt com uma extensão confiável).</li>
+      </ol>
+
+      <label class="ig-modal-label" for="igCookies" data-i18n="instagram.modal.label">Cookies ou sessionid</label>
+      <textarea id="igCookies" class="ig-modal-input" data-ig-cookies rows="4" spellcheck="false" autocomplete="off" data-i18n-placeholder="instagram.modal.placeholder" placeholder="sessionid=... ou conteúdo do cookies.txt"></textarea>
+
+      <p class="field-error" data-ig-error hidden></p>
+      <p class="ig-modal-privacy" data-i18n="instagram.privacy">Sua sessão fica apenas na memória do servidor e expira automaticamente.</p>
+
+      <div class="ig-modal-actions">
+        <button class="btn btn-primary btn-sm" type="button" data-ig-submit data-i18n="instagram.modal.submit">Conectar</button>
+        <button class="btn btn-ghost btn-sm" type="button" data-ig-cancel data-i18n="instagram.modal.cancel">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/i18n.js?v=3.1.0"></script>
+  <script src="script.js?v=3.1.0"></script>
   <script>
     (function () {
       var langSelect = document.getElementById('langSelect');

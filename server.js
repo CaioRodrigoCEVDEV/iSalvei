@@ -7,12 +7,18 @@ const rateLimit = require('express-rate-limit');
 
 const { loadConfig } = require('./lib/config');
 const { createDownloader } = require('./lib/downloader');
-const { createDownloadHandler, createHealthHandler } = require('./lib/http');
+const {
+  createDownloadHandler,
+  createHealthHandler,
+  createInstagramSessionHandlers,
+} = require('./lib/http');
+const { createSessionStore } = require('./lib/instagram-session');
 const { PLATFORMS } = require('./lib/platforms');
 
 function createApp(options = {}) {
   const config = options.config || loadConfig();
   const downloader = options.downloader || createDownloader(config);
+  const sessionStore = options.sessionStore || createSessionStore({ ttlMs: config.instagramSessionTtl });
   const app = express();
 
   app.set('trust proxy', config.trustProxy);
@@ -20,7 +26,7 @@ function createApp(options = {}) {
   // Serve static frontend/assets first (mantém o comportamento atual).
   app.get('/index.html', (req, res) => res.redirect(301, '/'));
   app.use(express.static(path.join(__dirname, 'frontend')));
-  app.use(express.json());
+  app.use(express.json({ limit: '128kb' }));
 
   const apiLimiter = rateLimit({
     windowMs: config.rateLimitWindowMs,
@@ -39,8 +45,9 @@ function createApp(options = {}) {
     },
   });
 
-  const downloadHandler = createDownloadHandler({ config, downloader });
+  const downloadHandler = createDownloadHandler({ config, downloader, sessionStore });
   const healthHandler = createHealthHandler({ downloader });
+  const instagramHandlers = createInstagramSessionHandlers({ store: sessionStore, config });
 
   app.get('/sw.js', (req, res) => res.sendFile(path.join(__dirname, 'frontend', 'sw.js')));
   app.get('/manifest.json', (req, res) => res.sendFile(path.join(__dirname, 'manifest.json')));
@@ -58,6 +65,11 @@ function createApp(options = {}) {
     });
   });
 
+  // Sessão opcional da conta do Instagram (cookies somente em memória).
+  app.get('/api/instagram/session', instagramHandlers.status);
+  app.post('/api/instagram/session', apiLimiter, instagramHandlers.create);
+  app.delete('/api/instagram/session', instagramHandlers.remove);
+
   app.get('/download', apiLimiter, downloadHandler);
   app.get('/api/download', apiLimiter, downloadHandler);
 
@@ -67,7 +79,7 @@ function createApp(options = {}) {
     res.status(404).send('Not found');
   });
 
-  return { app, config, downloader };
+  return { app, config, downloader, sessionStore };
 }
 
 if (require.main === module) {

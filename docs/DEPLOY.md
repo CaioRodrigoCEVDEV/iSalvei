@@ -225,7 +225,9 @@ comparada com a alvo; divergência causa falha e rollback.
 | `API_PORT` | porta do `api_server.js` |
 | `API_DB_PATH` | banco SQLite; backup inclui esse arquivo |
 | `TMP_DIR` | diretório temporário dos downloads |
-| `COOKIES_FILE` | cookies do yt-dlp (copiado se estiver em `APP_DIR`) |
+| `COOKIES_FILE` | cookies globais do yt-dlp (copiado se estiver em `APP_DIR`) |
+| `IG_IMPERSONATE` | alvo de impersonation do Instagram (`chrome` por padrão; vazio desativa) |
+| `IG_SESSION_TTL` | validade em ms da sessão de conta conectada no app (padrão 12h) |
 | `YTDLP_PATH` | executável do yt-dlp usado pelo backend |
 | `FFMPEG_PATH` | executável do FFmpeg |
 | `FFPROBE_PATH` | executável do ffprobe |

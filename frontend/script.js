@@ -25,6 +25,193 @@
     }, 6000);
   }
 
+  /* ── instagram session ─────────────────────────────────────────────────── */
+
+  var igSession = (function () {
+    var modal = document.querySelector('[data-ig-modal]');
+    var panel = document.querySelector('[data-ig-session]');
+    var statusEl = document.querySelector('[data-ig-status]');
+    var connectButtons = document.querySelectorAll('[data-ig-connect]');
+    var disconnectButtons = document.querySelectorAll('[data-ig-disconnect]');
+    var cookiesInput = document.querySelector('[data-ig-cookies]');
+    var errorEl = document.querySelector('[data-ig-error]');
+    var submitButton = document.querySelector('[data-ig-submit]');
+    var closeButtons = document.querySelectorAll('[data-ig-cancel]');
+
+    var connected = false;
+    var busy = false;
+    var pendingRetry = null;
+    var lastFocus = null;
+
+    function setError(key) {
+      if (!errorEl) return;
+      if (!key) {
+        errorEl.hidden = true;
+        errorEl.textContent = '';
+        return;
+      }
+      errorEl.textContent = translate(key);
+      errorEl.hidden = false;
+    }
+
+    function render() {
+      if (panel) {
+        panel.hidden = false;
+        panel.classList.toggle('is-connected', connected);
+      }
+      if (statusEl) {
+        statusEl.textContent = translate(connected ? 'instagram.connected' : 'instagram.not-connected');
+      }
+      for (var i = 0; i < connectButtons.length; i++) connectButtons[i].hidden = connected;
+      for (var j = 0; j < disconnectButtons.length; j++) disconnectButtons[j].hidden = !connected;
+    }
+
+    function open(retry) {
+      if (!modal) return;
+      pendingRetry = typeof retry === 'function' ? retry : null;
+      lastFocus = document.activeElement;
+      setError(null);
+      if (cookiesInput) cookiesInput.value = '';
+      if (submitButton) {
+        submitButton.textContent = translate(pendingRetry ? 'instagram.modal.submit-retry' : 'instagram.modal.submit');
+        submitButton.disabled = false;
+      }
+      modal.hidden = false;
+      document.body.classList.add('has-ig-modal');
+      if (cookiesInput) {
+        try { cookiesInput.focus({ preventScroll: true }); } catch (error) { cookiesInput.focus(); }
+      }
+    }
+
+    function close() {
+      if (!modal) return;
+      modal.hidden = true;
+      document.body.classList.remove('has-ig-modal');
+      pendingRetry = null;
+      setError(null);
+      if (lastFocus && typeof lastFocus.focus === 'function') {
+        try { lastFocus.focus({ preventScroll: true }); } catch (error) { lastFocus.focus(); }
+      }
+    }
+
+    function refresh() {
+      return fetch('/api/instagram/session', {
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' }
+      }).then(function (response) {
+        if (!response.ok) return null;
+        return response.json();
+      }).then(function (body) {
+        if (!body) return;
+        connected = Boolean(body.connected);
+        render();
+      }).catch(function () {
+        // Servidor antigo ou offline: o painel simplesmente não é exibido.
+        if (panel) panel.hidden = true;
+      });
+    }
+
+    function submit() {
+      if (!cookiesInput || busy) return;
+      var value = cookiesInput.value.trim();
+      if (!value) {
+        setError('instagram.modal.invalid');
+        cookiesInput.focus();
+        return;
+      }
+
+      busy = true;
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.classList.add('is-loading');
+      }
+      setError(null);
+
+      fetch('/api/instagram/session', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ cookies: value })
+      }).then(function (response) {
+        return response.json().catch(function () { return {}; }).then(function (body) {
+          if (!response.ok) throw body || {};
+          return body;
+        });
+      }).then(function () {
+        connected = true;
+        render();
+        var retry = pendingRetry;
+        close();
+        if (retry) retry();
+      }).catch(function (error) {
+        console.error('[iSalvei] instagram session failed', error && error.code);
+        setError(error && error.code === 'INVALID_COOKIES' ? 'instagram.modal.invalid' : 'instagram.modal.error');
+      }).finally(function () {
+        busy = false;
+        if (submitButton) {
+          submitButton.disabled = false;
+          submitButton.classList.remove('is-loading');
+        }
+      });
+    }
+
+    function disconnect() {
+      fetch('/api/instagram/session', {
+        method: 'DELETE',
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' }
+      }).then(function () {
+        connected = false;
+        render();
+        showToast(translate('instagram.disconnected'));
+      }).catch(function (error) {
+        console.error('[iSalvei] instagram disconnect failed', error);
+      });
+    }
+
+    for (var i = 0; i < connectButtons.length; i++) {
+      connectButtons[i].addEventListener('click', function () { open(null); });
+    }
+    for (var j = 0; j < disconnectButtons.length; j++) {
+      disconnectButtons[j].addEventListener('click', disconnect);
+    }
+    for (var k = 0; k < closeButtons.length; k++) {
+      closeButtons[k].addEventListener('click', close);
+    }
+    if (submitButton) submitButton.addEventListener('click', submit);
+
+    if (modal) {
+      modal.addEventListener('click', function (event) {
+        if (event.target === modal) close();
+      });
+    }
+    if (cookiesInput) {
+      cookiesInput.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+          event.preventDefault();
+          submit();
+        }
+      });
+    }
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && modal && !modal.hidden) close();
+    });
+    document.addEventListener('localechange', function () {
+      if (panel && !panel.hidden) render();
+      if (modal && !modal.hidden && submitButton) {
+        submitButton.textContent = translate(pendingRetry ? 'instagram.modal.submit-retry' : 'instagram.modal.submit');
+      }
+    });
+
+    refresh();
+
+    return {
+      open: open,
+      refresh: refresh,
+      isConnected: function () { return connected; }
+    };
+  })();
+
   /* ── install prompt ────────────────────────────────────────────────────── */
 
   var btnInstall = document.getElementById('btnInstall');
@@ -441,7 +628,27 @@
       finishProcessing();
 
       if (error && error.type === 'api') {
-        var mapped = mapApiError(error.info);
+        var info = error.info || {};
+        var isInstagram = /(^|\.)instagram\.com$|(^|\.)instagr\.am$/i.test(
+          (function () {
+            try { return new URL(urlInput.value).hostname; } catch (ignored) { return ''; }
+          })()
+        );
+
+        if (info.loginRequired && isInstagram) {
+          setFieldError(null);
+          setMessage('instagram.required', null, 'error');
+          igSession.open(function () {
+            if (typeof form.requestSubmit === 'function') {
+              form.requestSubmit(submitButton);
+            } else {
+              form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+            }
+          });
+          return;
+        }
+
+        var mapped = mapApiError(info);
         if (mapped.field) {
           setMessage(null);
           setFieldError(mapped.key);

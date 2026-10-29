@@ -104,6 +104,28 @@ test('metadata args não contêm a flag antiga do YouTube e incluem runtime Node
   assert.equal(args.at(-1), 'https://www.youtube.com/watch?v=abc');
 });
 
+test('Instagram usa impersonation e prioriza cookies do usuário', () => {
+  const platform = detectPlatform('https://www.instagram.com/reel/a/');
+  const userConfig = loadConfig({ COOKIES_FILE: '/tmp/cookies-global.txt' });
+  const args = buildMetadataArgs(
+    'https://www.instagram.com/reel/a/',
+    platform,
+    '720',
+    userConfig,
+    { cookiesFile: '/tmp/ig-user.txt' }
+  );
+
+  assert.ok(args.includes('--impersonate'));
+  assert.equal(args[args.indexOf('--impersonate') + 1], 'chrome');
+  assert.ok(args.includes('--cookies'));
+  assert.equal(args[args.indexOf('--cookies') + 1], '/tmp/ig-user.txt');
+  assert.ok(!args.includes('/tmp/cookies-global.txt'));
+
+  const disabled = loadConfig({ IG_IMPERSONATE: '' });
+  const withoutImpersonate = buildMetadataArgs('https://www.instagram.com/reel/a/', platform, '720', disabled);
+  assert.ok(!withoutImpersonate.includes('--impersonate'));
+});
+
 test('download args de áudio extraem m4a e usam merge mp4 no vídeo', () => {
   const platform = detectPlatform('https://www.instagram.com/reel/a/');
   const audio = buildDownloadArgs('https://www.instagram.com/reel/a/', platform, 'audio', config, '/tmp/%(id)s.%(ext)s');

@@ -44,7 +44,7 @@ As respostas de erro têm o formato:
 | HTTP | Código | Significado |
 |---|---|---|
 | 400 | `URL_REQUIRED`, `URL_NOT_ALLOWED`, `INVALID_FORMAT` | URL/formato inválido ou host não permitido |
-| 403 | `AUTH_REQUIRED`, `GEO_BLOCKED` | Login/cookies necessários ou restrição geográfica |
+| 403 | `AUTH_REQUIRED`, `GEO_BLOCKED` | Login/cookies necessários ou restrição geográfica. `AUTH_REQUIRED` inclui `loginRequired: true` |
 | 404 | `NOT_AVAILABLE` | Conteúdo removido/indisponível |
 | 413 | `FILE_TOO_LARGE` | Acima de `MAX_FILE_SIZE` |
 | 422 | `UNSUPPORTED_PLATFORM`, `NO_VIDEO`, `DRM_PROTECTED`, `LIVE_NOT_SUPPORTED` | Plataforma/conteúdo não suportado |
