@@ -1,12 +1,12 @@
-const CACHE_NAME = 'isalvei-v8-2026-10';
+const CACHE_NAME = 'isalvei-v9-2026-10';
 const OFFLINE_URL = '/';
 const PRECACHE_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
-  '/assets/css/style.css?v=3.3.0',
-  '/assets/js/i18n.js?v=3.3.0',
-  '/script.js?v=3.3.0',
+  '/assets/css/style.css?v=3.4.0',
+  '/assets/js/i18n.js?v=3.4.0',
+  '/script.js?v=3.4.0',
   '/assets/img/pwa-192x192.png',
   '/assets/img/pwa-512x512.png',
   '/assets/img/apple-touch-icon.png',

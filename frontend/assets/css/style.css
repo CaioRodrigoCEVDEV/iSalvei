@@ -2,20 +2,40 @@
   --color-page: #f5f6f3;
   --color-surface: #ffffff;
   --color-surface-soft: #f7f9f5;
+  --color-surface-hover: #f0f3ee;
   --color-text: #17251e;
   --color-muted: #647067;
+  --color-faint: #69736b;
   --color-primary: #176b4d;
   --color-primary-hover: #12583f;
   --color-primary-active: #0e4632;
   --color-primary-soft: #e9f2ed;
+  --color-on-primary: #ffffff;
   --color-border: #dde2db;
   --color-border-strong: #c8d1c7;
+  --color-border-hover: #b7c2b5;
+  --color-border-primary-hover: #bcd6c9;
   --color-success: #176b4d;
   --color-success-soft: #f2f8f4;
   --color-success-border: #cfe2d7;
+  --color-success-icon: #dceee3;
   --color-danger: #b42318;
   --color-danger-soft: #fdf1f0;
   --color-danger-border: #f2d4d1;
+  --color-track: #e3e9e2;
+  --color-disabled: #8da79a;
+  --color-on-disabled: #ffffff;
+  --color-selection: #cfe5d9;
+  --color-placeholder: #69736b;
+  --color-focus-ring: rgba(23, 107, 77, 0.12);
+  --color-danger-ring: rgba(180, 35, 24, 0.1);
+  --color-ghost-hover: rgba(255, 255, 255, 0.6);
+  --color-toast-bg: #17251e;
+  --color-toast-text: #ffffff;
+  --color-spinner-track: rgba(255, 255, 255, 0.36);
+  --color-spinner-head: #ffffff;
+  --color-spinner-muted-track: rgba(23, 107, 77, 0.2);
+  --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='m1 1 4 4 4-4' fill='none' stroke='%23647067' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 18px;
@@ -25,6 +45,52 @@
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --transition: 160ms ease;
   color-scheme: light;
+}
+
+/* Detecção automática do tema do sistema. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-page: #0f1511;
+    --color-surface: #161e18;
+    --color-surface-soft: #1c2620;
+    --color-surface-hover: #232f27;
+    --color-text: #e7eee9;
+    --color-muted: #9ba89f;
+    --color-faint: #8a978f;
+    --color-primary: #5cc496;
+    --color-primary-hover: #74d2a7;
+    --color-primary-active: #8dddb9;
+    --color-primary-soft: #1b3027;
+    --color-on-primary: #07231a;
+    --color-border: #2a352e;
+    --color-border-strong: #3b483f;
+    --color-border-hover: #56655a;
+    --color-border-primary-hover: #3f6a56;
+    --color-success: #5cc496;
+    --color-success-soft: #15251e;
+    --color-success-border: #2c493b;
+    --color-success-icon: #234436;
+    --color-danger: #ff8177;
+    --color-danger-soft: #2a1715;
+    --color-danger-border: #5a2b26;
+    --color-track: #2a352e;
+    --color-disabled: #345a49;
+    --color-on-disabled: #c2d8cb;
+    --color-selection: #2c5b45;
+    --color-placeholder: #8a978f;
+    --color-focus-ring: rgba(92, 196, 150, 0.22);
+    --color-danger-ring: rgba(255, 129, 119, 0.18);
+    --color-ghost-hover: rgba(255, 255, 255, 0.07);
+    --color-toast-bg: #e7eee9;
+    --color-toast-text: #0f1511;
+    --color-spinner-track: rgba(7, 35, 26, 0.28);
+    --color-spinner-head: #07231a;
+    --color-spinner-muted-track: rgba(92, 196, 150, 0.28);
+    --select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='m1 1 4 4 4-4' fill='none' stroke='%239ba89f' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4), 0 16px 40px rgba(0, 0, 0, 0.35);
+    --shadow-toast: 0 12px 32px rgba(0, 0, 0, 0.55);
+    color-scheme: dark;
+  }
 }
 
 *,
@@ -97,7 +163,7 @@ button {
 
 ::selection {
   color: var(--color-text);
-  background: #cfe5d9;
+  background: var(--color-selection);
 }
 
 :focus-visible {
@@ -207,7 +273,7 @@ button {
 
 .install-btn:hover {
   background: var(--color-primary-soft);
-  border-color: #bcd6c9;
+  border-color: var(--color-border-primary-hover);
 }
 
 .install-btn:disabled {
@@ -221,7 +287,7 @@ button {
   padding: 0 28px 0 10px;
   color: var(--color-muted);
   background-color: var(--color-surface);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='m1 1 4 4 4-4' fill='none' stroke='%23647067' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-image: var(--select-chevron);
   background-repeat: no-repeat;
   background-position: right 10px center;
   border: 1px solid var(--color-border);
@@ -307,12 +373,12 @@ button {
 }
 
 .url-control:hover {
-  border-color: #b7c2b5;
+  border-color: var(--color-border-hover);
 }
 
 .url-control:focus-within {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(23, 107, 77, 0.12);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 
 .url-control.is-invalid {
@@ -320,7 +386,7 @@ button {
 }
 
 .url-control.is-invalid:focus-within {
-  box-shadow: 0 0 0 3px rgba(180, 35, 24, 0.1);
+  box-shadow: 0 0 0 3px var(--color-danger-ring);
 }
 
 .url-icon {
@@ -346,7 +412,7 @@ button {
 }
 
 .url-control input::placeholder {
-  color: #69736b;
+  color: var(--color-placeholder);
   opacity: 1;
 }
 
@@ -403,7 +469,7 @@ button {
 }
 
 .paste-btn:hover {
-  background: #f0f3ee;
+  background: var(--color-surface-hover);
   border-color: var(--color-border-strong);
 }
 
@@ -437,7 +503,7 @@ button {
   padding: 0 36px 0 13px;
   color: var(--color-text);
   background-color: var(--color-surface);
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='m1 1 4 4 4-4' fill='none' stroke='%23647067' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-image: var(--select-chevron);
   background-repeat: no-repeat;
   background-position: right 13px center;
   border: 1px solid var(--color-border-strong);
@@ -450,12 +516,12 @@ button {
 }
 
 .select-wrap select:hover {
-  border-color: #b7c2b5;
+  border-color: var(--color-border-hover);
 }
 
 .select-wrap select:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(23, 107, 77, 0.12);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
   outline: 0;
 }
 
@@ -474,7 +540,7 @@ button {
   min-height: 52px;
   margin-top: 18px;
   padding: 0 20px;
-  color: #ffffff;
+  color: var(--color-on-primary);
   background: var(--color-primary);
   border: 1px solid var(--color-primary);
   border-radius: 11px;
@@ -500,8 +566,9 @@ button {
 }
 
 .download-btn:disabled {
-  background: #8da79a;
-  border-color: #8da79a;
+  color: var(--color-on-disabled);
+  background: var(--color-disabled);
+  border-color: var(--color-disabled);
   cursor: wait;
   transform: none;
 }
@@ -522,8 +589,8 @@ button {
   width: 18px;
   height: 18px;
   flex: 0 0 auto;
-  border: 2px solid rgba(255, 255, 255, 0.36);
-  border-top-color: #ffffff;
+  border: 2px solid var(--color-spinner-track);
+  border-top-color: var(--color-spinner-head);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -531,7 +598,7 @@ button {
 .spinner-dark {
   width: 20px;
   height: 20px;
-  border-color: rgba(23, 107, 77, 0.2);
+  border-color: var(--color-spinner-muted-track);
   border-top-color: var(--color-primary);
 }
 
@@ -606,7 +673,7 @@ button {
   height: 5px;
   margin-top: 13px;
   overflow: hidden;
-  background: #e3e9e2;
+  background: var(--color-track);
   border-radius: 999px;
 }
 
@@ -664,7 +731,7 @@ button {
   width: 30px;
   height: 30px;
   color: var(--color-success);
-  background: #dceee3;
+  background: var(--color-success-icon);
   border-radius: 50%;
 }
 
@@ -730,7 +797,7 @@ button {
 }
 
 .btn-primary {
-  color: #ffffff;
+  color: var(--color-on-primary);
   background: var(--color-primary);
   border-color: var(--color-primary);
 }
@@ -747,7 +814,7 @@ button {
 }
 
 .btn-ghost:hover {
-  background: rgba(255, 255, 255, 0.6);
+  background: var(--color-ghost-hover);
 }
 
 .btn-sm {
@@ -795,7 +862,7 @@ button {
 }
 
 .platform-soon {
-  color: #69736b;
+  color: var(--color-faint);
   font-size: 0.68rem;
   letter-spacing: 0.02em;
 }
@@ -898,7 +965,7 @@ button {
 }
 
 .platform-item:hover {
-  background: #fbfcfa;
+  background: var(--color-surface-hover);
 }
 
 .platform-item svg {
@@ -957,8 +1024,8 @@ button {
   z-index: 50;
   width: min(92vw, 470px);
   padding: 11px 14px;
-  color: #ffffff;
-  background: var(--color-text);
+  color: var(--color-toast-text);
+  background: var(--color-toast-bg);
   border-radius: 10px;
   box-shadow: var(--shadow-toast);
   font-size: 0.84rem;
