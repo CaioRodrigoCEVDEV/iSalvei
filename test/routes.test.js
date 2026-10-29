@@ -177,3 +177,17 @@ test('rota legada /download usa o mesmo handler', async (t) => {
   assert.equal(response.headers.get('content-type'), 'video/mp4');
   assert.equal(await response.text(), 'fake video bytes');
 });
+
+test('erro 502 usa mensagem segura sem vazar stderr', async (t) => {
+  const file = tempMedia(t);
+  const downloader = fakeDownloader(file, { error: appError(502, 'UPSTREAM_PARSE', 'Não foi possível interpretar a página.', { details: 'secret stderr https://cdn.example/token' }) });
+  const { app } = createApp({ config: makeConfig(), downloader });
+  const { server, base } = await listen(app);
+  t.after(() => server.close());
+
+  const response = await fetch(`${base}/api/download?url=https%3A%2F%2Fyoutube.com%2Fwatch%3Fv%3Dabc`);
+  assert.equal(response.status, 502);
+  const body = await response.json();
+  assert.equal(body.error, 'Não foi possível interpretar a página.');
+  assert.equal(body.details, undefined);
+});

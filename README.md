@@ -1,11 +1,11 @@
 # iSalvei
 
-**iSalvei** é uma aplicação web que permite o download de vídeos públicos de diversas plataformas compatíveis com `yt-dlp`.
+**iSalvei** é uma aplicação web para baixar vídeos públicos das plataformas suportadas pelo backend (YouTube, Instagram, TikTok, Facebook e X/Twitter).
 Com interface moderna, rate limit por IP e proteção contra URLs internas, o usuário cola o link desejado e realiza o download diretamente pelo navegador.
 
 ## 🚀 Demonstração
 
-Para utilizar o iSalvei, basta acessar o arquivo `index.html` presente no repositório e abrir em seu navegador.
+Inicie o backend com `npm start` e acesse `http://localhost:3000` no navegador. O frontend depende da API para validar e baixar os vídeos.
 
 ## 🧠 Funcionalidades
 
@@ -33,6 +33,7 @@ Para utilizar o iSalvei, basta acessar o arquivo `index.html` presente no reposi
 - **720p/480p**: limitados pelo menor lado do vídeo. Um Reel 720x1280 continua 720x1280 em 720p.
 - **Áudio**: extraído para `.m4a` (AAC).
 - Vídeos acima de `MAX_VIDEO_DURATION` ou `MAX_FILE_SIZE` são recusados.
+- Para YouTube/TikTok completos, instale `yt-dlp[default,curl-cffi]` (Docker, venv ou pipx). Pacotes `apt`/standalone antigos podem não ter o runtime EJS nem impersonation.
 - Conteúdo privado, removido, com DRM, ao vivo ou sem vídeo retorna erro claro e não é repetido indefinidamente.
 
 ### Cookies (conteúdo restrito)
@@ -66,6 +67,7 @@ Nunca versione esse arquivo. Os cookies não são registrados nos logs.
    # Instale o yt-dlp com runtime JS e impersonation; veja docs/DEPLOY.md
    python3 -m venv .venv-ytdlp
    .venv-ytdlp/bin/pip install "yt-dlp[default,curl-cffi]==2026.10.26"
+   export YTDLP_PATH="$PWD/.venv-ytdlp/bin/yt-dlp"
 
    npm ci --omit=dev
 
@@ -116,9 +118,8 @@ npm run test:download
 YTDLP_PATH=/caminho/para/yt-dlp npm run test:live
 ```
 
-Os testes reais cobrem YouTube, Instagram, TikTok, Facebook e a rejeição de Kwai.
-Conteúdo privado e X/Twitter dependem de amostras válidas/cookies e podem ser
-marcados como pendentes no relatório de execução.
+Os testes reais cobrem YouTube, Instagram, TikTok, Facebook, X/Twitter e a rejeição de Kwai.
+Conteúdo privado depende de cookies/amostras válidas e pode ser marcado como pendente no relatório de execução.
 
 ## 📫 Contato
 

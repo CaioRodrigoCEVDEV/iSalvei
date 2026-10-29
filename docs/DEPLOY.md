@@ -140,6 +140,8 @@ DEPLOY_DOCKER_PORTS="0.0.0.0:3000:3000" \
 
 - O script constrói uma nova imagem (`isalvei:<timestamp>`) com o `yt-dlp`
   fixado via `--build-arg YTDLP_VERSION=...`.
+  A imagem instala `yt-dlp[default,curl-cffi]` (EJS/impersonation). Em
+  instalações não-Docker, prefira venv/pipx a pacotes `apt`/standalone antigos.
 - A imagem anterior é preservada como `isalvei:previous-<timestamp>`.
 - O container anterior é parado e renomeado para
   `isalvei-previous-<timestamp>`; ele não é removido automaticamente, para
@@ -151,7 +153,9 @@ DEPLOY_DOCKER_PORTS="0.0.0.0:3000:3000" \
 - O volume `data/` é preservado; em primeiro deploy, `APP_DIR/data` é montado
   em `/app/data`.
 - O `Dockerfile` usa um virtualenv em `/opt/yt-dlp`; não faz `pip install` no
-  Python gerenciado pelo sistema operacional.
+  Python gerenciado pelo sistema operacional. Ele instala
+  `yt-dlp[default,curl-cffi]` (EJS do YouTube e impersonation do TikTok) e usa
+  Node 22 como runtime JavaScript.
 - Health check: tenta a porta publicada; se não houver porta publicada, executa
   o health check dentro do container com `docker exec`.
 - `--yt-dlp-only` no Docker sempre recria o container (é necessário para trocar

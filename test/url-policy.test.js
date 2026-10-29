@@ -164,3 +164,11 @@ test('t.co falha fechado se a sonda de redirect falhar', async () => {
     (error) => error.statusCode === 400
   );
 });
+
+test('bloqueia open redirect protocol-relative', async () => {
+  const raw = 'https://www.youtube.com/redirect?q=//169.254.169.254/';
+  await assert.rejects(
+    () => resolveSafeUrl(raw, { config, resolver: publicResolver }),
+    (error) => error.statusCode === 400 && error.code === 'URL_NOT_ALLOWED'
+  );
+});
