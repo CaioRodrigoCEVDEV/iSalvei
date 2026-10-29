@@ -1,4 +1,11 @@
+.git
+.deploy
+data
 node_modules
 npm-debug.log
 .env
 *.log
+nohup.out
+
+cookies*.txt
+*.cookies

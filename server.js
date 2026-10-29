@@ -1,578 +1,92 @@
 require('dotenv').config();
+
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const { spawn } = require('child_process');
-const tmp = require('tmp-promise');
 const rateLimit = require('express-rate-limit');
 
-const app = express();
+const { loadConfig } = require('./lib/config');
+const { createDownloader } = require('./lib/downloader');
+const { createDownloadHandler, createHealthHandler } = require('./lib/http');
+const { PLATFORMS } = require('./lib/platforms');
 
-// ==============================
-// Config
-// ==============================
-const PORT = process.env.PORT || 3000;
-const API_PORT = process.env.API_PORT || process.env.PORT || 3000;
-const RATE_LIMIT_MAX = Number(process.env.RATE_LIMIT_MAX || 10);
-const RATE_LIMIT_WINDOW_MS = Number(process.env.RATE_LIMIT_WINDOW_MS || 60 * 1000);
-const YTDLP_TIMEOUT = Number(process.env.YTDLP_TIMEOUT || 120000); // timeout por tentativa (ms)
-const YTDLP_MAX_ATTEMPTS = Number(process.env.YTDLP_MAX_ATTEMPTS || 5);
-const YTDLP_INITIAL_BACKOFF = Number(process.env.YTDLP_INITIAL_BACKOFF || 2000); // ms
-const TMP_DIR = process.env.TMP_DIR || undefined;
-const COOKIES_FILE = process.env.COOKIES_FILE || '';
-const YTDLP_PATH = process.env.YTDLP_PATH || 'yt-dlp'; // use '/usr/local/bin/yt-dlp' no servidor se precisar
-const FFMPEG_PATH = process.env.FFMPEG_PATH || 'ffmpeg';
-const INSTAGRAM_USER_AGENT = process.env.INSTAGRAM_USER_AGENT || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36';
-const BLOCKED_HOSTS = (process.env.BLOCKED_HOSTS || '').split(',').map(h => h.trim().toLowerCase()).filter(Boolean);
-const MAX_VIDEO_DURATION = Number(process.env.MAX_VIDEO_DURATION || 600); // segundos (padrão: 10 min)
-const MAX_FILE_SIZE = Number(process.env.MAX_FILE_SIZE || 100 * 1024 * 1024); // bytes (padrão: 100MB)
+function createApp(options = {}) {
+  const config = options.config || loadConfig();
+  const downloader = options.downloader || createDownloader(config);
+  const app = express();
 
-// ==============================
-// Serve static frontend/assets FIRST (very important)
-// ==============================
-// Redirect /index.html to root to keep URL limpa
-app.get('/index.html', (req, res) => res.redirect(301, '/'));
+  app.set('trust proxy', config.trustProxy);
 
-app.use(express.static(path.join(__dirname, 'frontend')));
+  // Serve static frontend/assets first (mantém o comportamento atual).
+  app.get('/index.html', (req, res) => res.redirect(301, '/'));
+  app.use(express.static(path.join(__dirname, 'frontend')));
+  app.use(express.json());
 
-// parse json
-app.use(express.json());
+  const apiLimiter = rateLimit({
+    windowMs: config.rateLimitWindowMs,
+    max: config.rateLimitMax,
+    standardHeaders: true,
+    legacyHeaders: false,
+    handler: (req, res, next, limiterOptions) => {
+      const reset = req.rateLimit && req.rateLimit.resetTime;
+      if (reset instanceof Date) {
+        res.setHeader('Retry-After', String(Math.max(1, Math.ceil((reset.getTime() - Date.now()) / 1000))));
+      }
+      res.status(limiterOptions?.statusCode || 429).json({
+        error: 'Muitas requisições. Tente novamente em alguns instantes.',
+        code: 'RATE_LIMITED',
+      });
+    },
+  });
 
-// Se você está atrás de um reverse proxy (nginx, cloudflare, etc.), manter 1
-app.set('trust proxy', 1);
+  const downloadHandler = createDownloadHandler({ config, downloader });
+  const healthHandler = createHealthHandler({ downloader });
 
-// ==============================
-// Rate limiter: apply ONLY to API / download routes
-// ==============================
-const apiLimiter = rateLimit({
-  windowMs: RATE_LIMIT_WINDOW_MS,
-  max: RATE_LIMIT_MAX,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: 'Rate limit exceeded. Tente novamente em alguns instantes.' }
-});
+  app.get('/sw.js', (req, res) => res.sendFile(path.join(__dirname, 'frontend', 'sw.js')));
+  app.get('/manifest.json', (req, res) => res.sendFile(path.join(__dirname, 'manifest.json')));
+  app.get('/health', healthHandler);
 
-// ==============================
-// Helper: validate URLs
-// ==============================
-function isPrivateHost(hostname) {
-  const host = hostname.toLowerCase();
-  if (host === 'localhost' || host.endsWith('.localhost')) return true;
-  if (BLOCKED_HOSTS.some(blocked => host === blocked || host.endsWith(`.${blocked}`))) return true;
+  app.get('/api', (req, res) => {
+    res.json({
+      message: 'Downloader API (v3)',
+      formats: ['best', '720', '480', 'audio'],
+      platforms: PLATFORMS.filter((platform) => platform.supported).map((platform) => platform.name),
+      endpoints: {
+        download: '/api/download?url=...&format=best|720|480|audio (GET, rate limited)',
+        health: '/health',
+      },
+    });
+  });
 
-  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
-    const parts = host.split('.').map(Number);
-    if (parts.some(part => part < 0 || part > 255)) return true;
-    const [a, b] = parts;
-    return a === 10 || a === 127 || a === 0 ||
-      (a === 169 && b === 254) ||
-      (a === 172 && b >= 16 && b <= 31) ||
-      (a === 192 && b === 168);
-  }
+  app.get('/download', apiLimiter, downloadHandler);
+  app.get('/api/download', apiLimiter, downloadHandler);
 
-  if (host === '::1' || host.startsWith('fc') || host.startsWith('fd') || host.startsWith('fe80')) return true;
-  return false;
+  app.get('/', (req, res) => {
+    const index = path.join(__dirname, 'frontend', 'index.html');
+    if (fs.existsSync(index)) return res.sendFile(index);
+    res.status(404).send('Not found');
+  });
+
+  return { app, config, downloader };
 }
 
-function isAllowedUrl(u) {
-  try {
-    const parsed = new URL(u);
-    return ['http:', 'https:'].includes(parsed.protocol) && !isPrivateHost(parsed.hostname);
-  } catch (e) {
-    return false;
-  }
-}
-
-function mapFormatToYtDlp(format, url) {
-  const isInstagram = url && /instagram\.com/i.test(url);
-
-  // Instagram entrega Reels/posts principalmente como MP4 progressivo.
-  // Seletores bestvideo+bestaudio quebram em muitos casos porque nao ha faixas separadas.
-  if (isInstagram) {
-    switch (String(format || 'best')) {
-      case '720': return 'best[height<=720][ext=mp4]/best[height<=720]/best[ext=mp4]/best';
-      case '480': return 'best[height<=480][ext=mp4]/best[height<=480]/best[ext=mp4]/best';
-      case 'audio': return 'bestaudio/best';
-      case 'best':
-      default: return 'best[ext=mp4]/best';
-    }
-  }
-
-  switch (String(format || 'best')) {
-    case '720': return `bestvideo[height<=720]+bestaudio/best[height<=720]/best`;
-    case '480': return `bestvideo[height<=480]+bestaudio/best[height<=480]/best`;
-    case 'audio': return 'bestaudio/best';
-    case 'best':
-    default: return `bestvideo+bestaudio/best`;
-  }
-}
-
-function appendCommonYtDlpArgs(args, url) {
-  if (COOKIES_FILE) {
-    args.push('--cookies', COOKIES_FILE);
-  }
-
-  if (/instagram\.com/i.test(url)) {
-    args.push(
-      '--user-agent', INSTAGRAM_USER_AGENT,
-      '--add-header', 'Accept-Language:pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7',
-      '--extractor-retries', '3'
-    );
-  }
-
-  if (/youtube\.com/i.test(url)) {
-    args.push('--extractor-args', 'youtube:player-client=web,android');
-  }
-}
-
-function createHttpError(message, statusCode) {
-  const error = new Error(message);
-  error.statusCode = statusCode;
-  return error;
-}
-
-function classifyYtDlpError(stderr) {
-  const stderrLower = String(stderr || '').toLowerCase();
-
-  if (/deprecated feature:.*--no-call-home/i.test(stderr)) {
-    return {
-      type: 'deprecatedFlag',
-      retryable: false,
-      statusCode: 500,
-      message: 'yt-dlp: deprecated flag --no-call-home detected in config/output. Remova essa flag das configs do yt-dlp.'
-    };
-  }
-
-  if (/rate[- ]?limi|too many requests|429\b|limit reached/i.test(stderrLower)) {
-    return {
-      type: 'rateLimit',
-      retryable: true,
-      statusCode: 429,
-      message: 'Instagram limitou temporariamente as requisições deste servidor. Tente novamente em alguns minutos.'
-    };
-  }
-
-  if (/403|401/.test(stderrLower)) {
-    return {
-      type: 'auth',
-      retryable: false,
-      statusCode: 403,
-      message: 'O conteúdo exige autenticação ou cookies válidos para ser acessado.'
-    };
-  }
-
-  if (/private profile/i.test(stderrLower) || /this content is private/i.test(stderrLower)) {
-    return {
-      type: 'private',
-      retryable: false,
-      statusCode: 403,
-      message: 'O conteúdo é privado ou exige autenticação.'
-    };
-  }
-
-  if (/requested content is not available/i.test(stderrLower) || /error: \[instagram\].*requested content is not available/i.test(stderrLower)) {
-    return {
-      type: 'notAvailable',
-      retryable: false,
-      statusCode: 404,
-      message: 'O conteúdo solicitado não está disponível publicamente.'
-    };
-  }
-
-  return {
-    type: 'unknown',
-    retryable: true,
-    statusCode: 500,
-    message: 'Falha ao obter o vídeo.'
-  };
-}
-
-// ==============================
-// Video metadata extraction
-// ==============================
-async function getVideoMetadata(url, formatArg) {
-  const args = [
-    url,
-    '--dump-json',
-    '--no-playlist',
-    '-f', mapFormatToYtDlp(formatArg, url),
-    '--no-warnings',
-  ];
-
-  appendCommonYtDlpArgs(args, url);
-
-  let attempt = 0;
-  let backoffMs = YTDLP_INITIAL_BACKOFF;
-  let lastError;
-
-  while (attempt < YTDLP_MAX_ATTEMPTS) {
-    attempt++;
-
+if (require.main === module) {
+  const { app, config, downloader } = createApp();
+  const server = app.listen(config.port, async () => {
+    console.log(`Server running on port ${config.port}`);
     try {
-      return await new Promise((resolve, reject) => {
-        let stdout = '';
-        let stderr = '';
-        let finished = false;
-        const child = spawn(YTDLP_PATH, args, { stdio: ['ignore', 'pipe', 'pipe'] });
-        const timeout = setTimeout(() => {
-          if (!finished) {
-            try { child.kill('SIGKILL'); } catch (e) {}
-          }
-        }, YTDLP_TIMEOUT);
-
-        child.stdout.on('data', d => { stdout += d.toString(); });
-        child.stderr.on('data', d => { stderr += d.toString(); });
-        child.on('error', err => {
-          finished = true;
-          clearTimeout(timeout);
-          reject(new Error('Failed to start yt-dlp: ' + err.message));
-        });
-        child.on('close', code => {
-          finished = true;
-          clearTimeout(timeout);
-          if (code !== 0) {
-            const classified = classifyYtDlpError(stderr);
-            const error = createHttpError(classified.message, classified.statusCode);
-            error.retryable = classified.retryable;
-            error.type = classified.type;
-            error.details = stderr.slice(0, 300);
-            reject(error);
-            return;
-          }
-          try {
-            const jsonLine = stdout.split('\n').find(line => line.trim().startsWith('{'));
-            if (!jsonLine) throw new Error('yt-dlp did not return JSON metadata');
-            const metadata = JSON.parse(jsonLine);
-            resolve(metadata);
-          } catch (err) {
-            reject(new Error('Failed to parse metadata JSON: ' + err.message));
-          }
-        });
-      });
-    } catch (err) {
-      lastError = err;
-      if (!err.retryable || attempt >= YTDLP_MAX_ATTEMPTS) throw err;
-      console.warn(`[yt-dlp] metadata attempt ${attempt}/${YTDLP_MAX_ATTEMPTS} failed (${err.type || 'unknown'}). Retrying after ${backoffMs}ms.`);
-      await sleep(backoffMs);
-      backoffMs *= 2;
-    }
-  }
-
-  throw lastError || createHttpError('Falha ao obter metadados do vídeo.', 500);
-}
-
-// ==============================
-// Video validation
-// ==============================
-function validateVideo(metadata) {
-  const duration = metadata.duration;
-  if (duration && duration > MAX_VIDEO_DURATION) {
-    const minutes = Math.floor(MAX_VIDEO_DURATION / 60);
-    throw new Error(`Vídeo muito longo. Limite máximo: ${minutes} minutos.`);
-  }
-
-  let fileSize = metadata.filesize || metadata.filesize_approx;
-
-  if (!fileSize && metadata.requested_formats) {
-    fileSize = metadata.requested_formats.reduce((sum, f) => sum + (f.filesize || f.filesize_approx || 0), 0);
-  }
-
-  if (!fileSize && metadata.formats && metadata.formats.length > 0) {
-    const last = metadata.formats[metadata.formats.length - 1];
-    fileSize = last.filesize || last.filesize_approx;
-  }
-
-  if (fileSize && fileSize > MAX_FILE_SIZE) {
-    const sizeMB = Math.round(MAX_FILE_SIZE / (1024 * 1024));
-    throw new Error(`Arquivo muito grande para download. Limite máximo: ${sizeMB}MB.`);
-  }
-}
-
-function getTargetVideoHeight(format) {
-  const value = String(format || 'best');
-  if (value === '720') return 720;
-  if (value === '480') return 480;
-  return null;
-}
-
-function runProcess(command, args, timeoutMs) {
-  return new Promise((resolve, reject) => {
-    let stderr = '';
-    let finished = false;
-    const child = spawn(command, args, { stdio: ['ignore', 'ignore', 'pipe'] });
-    const timeout = setTimeout(() => {
-      if (!finished) {
-        try { child.kill('SIGKILL'); } catch (_) {}
+      const health = await downloader.checkHealth();
+      if (!health.ok) {
+        console.warn('[startup] Dependências incompletas:', health.checks);
       }
-    }, timeoutMs);
-
-    child.stderr.on('data', d => { stderr += d.toString(); });
-    child.on('error', err => {
-      finished = true;
-      clearTimeout(timeout);
-      reject(new Error('Failed to start ' + command + ': ' + err.message));
-    });
-    child.on('close', code => {
-      finished = true;
-      clearTimeout(timeout);
-      if (code === 0) return resolve();
-      reject(new Error(command + ' exited with code ' + code + '. ' + stderr.slice(0, 500)));
-    });
-  });
-}
-
-async function enforceSelectedQuality(filePath, format) {
-  const targetHeight = getTargetVideoHeight(format);
-  if (!targetHeight) return filePath;
-
-  const parsed = path.parse(filePath);
-  const outputPath = path.join(parsed.dir, parsed.name + '-' + targetHeight + 'p.mp4');
-  const scaleFilter = 'scale=trunc(iw*min(1\\,' + targetHeight + '/ih)/2)*2:trunc(ih*min(1\\,' + targetHeight + '/ih)/2)*2';
-
-  await runProcess(FFMPEG_PATH, [
-    '-y',
-    '-i', filePath,
-    '-vf', scaleFilter,
-    '-c:v', 'libx264',
-    '-preset', 'veryfast',
-    '-crf', targetHeight === 480 ? '28' : '25',
-    '-c:a', 'aac',
-    '-b:a', '128k',
-    '-movflags', '+faststart',
-    outputPath
-  ], YTDLP_TIMEOUT);
-
-  return outputPath;
-}
-// ==============================
-// Download helper using yt-dlp with retries/backoff
-// ==============================
-async function downloadToTemp(url, formatArg) {
-  const { path: tmpDir, cleanup: cleanupTmpDir } = await tmp.dir({ unsafeCleanup: true, dir: TMP_DIR });
-  const outTemplate = path.join(tmpDir, '%(title)s.%(ext)s');
-
-  // args base (SEM --no-call-home)
-  const baseArgs = [
-    url,
-    '--no-playlist',
-    '-f', mapFormatToYtDlp(formatArg, url),
-    '-o', outTemplate,
-    '--restrict-filenames',
-    '--no-warnings',
-    '--no-progress',
-    '--retries', '10',
-    '--fragment-retries', '10',
-    '--sleep-requests', '2',
-    '--sleep-interval', '3',
-    '--max-sleep-interval', '8',
-    '--merge-output-format', 'mp4'
-  ];
-
-  appendCommonYtDlpArgs(baseArgs, url);
-
-  let attempt = 0;
-  let backoffMs = YTDLP_INITIAL_BACKOFF;
-
-  const cleanupAll = () => {
-    try { cleanupTmpDir(); } catch(_) {}
-  };
-
-  while (attempt < YTDLP_MAX_ATTEMPTS) {
-    attempt++;
-    const args = [...baseArgs]; // clone
-    console.log(`[yt-dlp] attempt ${attempt}/${YTDLP_MAX_ATTEMPTS}: ${YTDLP_PATH} ${args.join(' ')}`);
-
-    const child = spawn(YTDLP_PATH, args, { stdio: ['ignore', 'pipe', 'pipe'] });
-
-    let stderr = '';
-    let stdout = '';
-    let finished = false;
-
-    child.stdout.on('data', d => { stdout += d.toString(); process.stdout.write(d); });
-    child.stderr.on('data', d => { stderr += d.toString(); process.stderr.write(d); });
-
-    const attemptTimeout = setTimeout(() => {
-      if (!finished) {
-        console.warn('[yt-dlp] attempt timeout reached, killing process');
-        try { child.kill('SIGKILL'); } catch(e) {}
-      }
-    }, YTDLP_TIMEOUT);
-
-    const exitCode = await new Promise((resolve) => {
-      child.on('close', (code) => {
-        finished = true;
-        clearTimeout(attemptTimeout);
-        resolve(code);
-      });
-      child.on('error', (err) => {
-        finished = true;
-        clearTimeout(attemptTimeout);
-        console.error('[yt-dlp] spawn error', err);
-        resolve(1);
-      });
-    });
-
-    // diagnóstico
-    const classifiedError = classifyYtDlpError(stderr);
-
-    if (classifiedError.type === 'deprecatedFlag') {
-      // mensagem clara sobre remoção de flag --no-call-home
-      cleanupAll();
-      throw createHttpError(classifiedError.message, classifiedError.statusCode);
-    }
-
-    if (exitCode === 0) {
-      // sucesso: encontra o arquivo mais recente no tmpDir
-      try {
-        const files = fs.readdirSync(tmpDir)
-          .map(f => {
-            const filePath = path.join(tmpDir, f);
-            const stat = fs.statSync(filePath);
-            return { f, filePath, stat, m: stat.mtimeMs };
-          })
-          .filter(file => file.stat.isFile() && file.stat.size > 0 && !file.f.endsWith('.part') && !file.f.endsWith('.ytdl'))
-          .sort((a,b) => b.m - a.m);
-        if (!files.length) {
-          cleanupAll();
-          throw new Error('No file produced by yt-dlp');
-        }
-        const filePath = await enforceSelectedQuality(files[0].filePath, formatArg);
-        // retornamos filePath e função cleanup para o caller
-        return {
-          filePath,
-          cleanup: () => {
-            cleanupAll();
-          }
-        };
-      } catch (err) {
-        cleanupAll();
-        throw err;
-      }
-    }
-
-    // Erros fatais que não fazem sentido continuar tentando
-    if (classifiedError.type === 'notAvailable' || classifiedError.type === 'private') {
-      cleanupAll();
-      throw createHttpError(classifiedError.message, classifiedError.statusCode);
-    }
-
-    // 401/403 provavelmente necessitam de autenticação (cookies/user)
-    if (classifiedError.type === 'auth') {
-      console.warn('[yt-dlp] servidor retornou 401/403 — verifique autenticação (cookies). Aborting retries.');
-      cleanupAll();
-      throw createHttpError(classifiedError.message, classifiedError.statusCode);
-    }
-
-    // Se detectamos rate-limit -> backoff e retry
-    if (classifiedError.type === 'rateLimit') {
-      console.warn(`[yt-dlp] detected rate-limit on attempt ${attempt}. stderr snippet: ${stderr.slice(0,200)}`);
-      if (attempt >= YTDLP_MAX_ATTEMPTS) {
-        cleanupAll();
-        throw createHttpError(classifiedError.message, classifiedError.statusCode);
-      }
-      await sleep(backoffMs);
-      backoffMs *= 2;
-      continue;
-    }
-
-    // Outros erros: faz retry com backoff até o máximo
-    console.warn(`[yt-dlp] attempt ${attempt} failed (exit ${exitCode}). stderr snippet: ${stderr.slice(0,200)}`);
-    if (attempt >= YTDLP_MAX_ATTEMPTS) break;
-    await sleep(backoffMs);
-    backoffMs *= 2;
-  }
-
-  // se chegou aqui, falhou todas as tentativas
-  cleanupAll();
-  throw createHttpError('yt-dlp failed after max attempts', 500);
-}
-
-function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
-
-// ==============================
-// Routes
-// ==============================
-
-app.get('/sw.js', (req, res) => {
-  res.sendFile(__dirname + '/frontend/sw.js');
-});
-
-app.get('/manifest.json', (req, res) => {
-  res.sendFile(__dirname + '/manifest.json');
-});
-
-// Simple health
-app.get('/health', (req, res) => res.json({ ok: true }));
-
-// API info
-app.get('/api', (req, res) => {
-  res.json({
-    message: 'Downloader API (v2)',
-    endpoints: {
-      download: '/api/download?url=...&format=best|720|480|audio (GET, rate limited)',
-      supportedUrls: 'URLs públicas HTTP(S) compatíveis com yt-dlp'
+    } catch (error) {
+      console.warn('[startup] Não foi possível verificar dependências:', error.message);
     }
   });
-});
 
-// Download route under /download (legacy) - protected by apiLimiter
-app.get('/download', apiLimiter, async (req, res) => {
-  const url = req.query.url;
-  const format = req.query.format; // optional
-  if (!url) return res.status(400).json({ error: 'query param "url" required' });
-  if (!isAllowedUrl(url)) return res.status(400).json({ error: 'URL inválida ou bloqueada. Use uma URL pública HTTP(S).' });
+  const shutdown = () => server.close(() => process.exit(0));
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
+}
 
-  try {
-    const metadata = await getVideoMetadata(url, format);
-    validateVideo(metadata);
-    const { filePath, cleanup } = await downloadToTemp(url, format);
-    const ext = path.extname(filePath).toLowerCase();
-    const contentType = ext === '.mp4' ? 'video/mp4' : ext === '.webm' ? 'video/webm' : ext === '.m4a' || ext === '.aac' ? 'audio/mp4' : 'application/octet-stream';
-    res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
-    res.setHeader('Content-Type', contentType);
-    const stream = fs.createReadStream(filePath);
-    stream.pipe(res);
-    stream.on('close', () => { try{ cleanup(); } catch(_){} });
-    stream.on('error', (err) => { try{ cleanup(); } catch(_){}; console.error('Stream error', err); if(!res.headersSent) res.status(500).json({ error: 'Stream error' }); });
-  } catch (err) {
-    console.error('Download error', err);
-    const statusCode = err.statusCode || (err.message.includes('Vídeo muito longo') || err.message.includes('Arquivo muito grande') ? 400 : 500);
-    res.status(statusCode).json({ error: statusCode < 500 ? err.message : 'Failed to download', details: statusCode === 500 ? err.message : undefined });
-  }
-});
-
-// API download route (namespaced) - also protected
-app.get('/api/download', apiLimiter, async (req, res) => {
-  const url = req.query.url;
-  const format = req.query.format;
-  if (!url) return res.status(400).json({ error: 'url param required' });
-  if (!isAllowedUrl(url)) return res.status(400).json({ error: 'URL inválida ou bloqueada. Use uma URL pública HTTP(S).' });
-
-  try {
-    const metadata = await getVideoMetadata(url, format);
-    validateVideo(metadata);
-    const { filePath, cleanup } = await downloadToTemp(url, format);
-    const ext = path.extname(filePath).toLowerCase();
-    const contentType = ext === '.mp4' ? 'video/mp4' : ext === '.webm' ? 'video/webm' : ext === '.m4a' || ext === '.aac' ? 'audio/mp4' : 'application/octet-stream';
-    res.setHeader('Content-Disposition', `attachment; filename="${path.basename(filePath)}"`);
-    res.setHeader('Content-Type', contentType);
-    const stream = fs.createReadStream(filePath);
-    stream.pipe(res);
-    stream.on('close', () => { try{ cleanup(); } catch(_){} });
-    stream.on('error', (err) => { try{ cleanup(); } catch(_){}; console.error('Stream error', err); if(!res.headersSent) res.status(500).json({ error: 'Stream error' }); });
-  } catch (err) {
-    console.error('Download error', err);
-    const statusCode = err.statusCode || (err.message.includes('Vídeo muito longo') || err.message.includes('Arquivo muito grande') ? 400 : 500);
-    res.status(statusCode).json({ error: statusCode < 500 ? err.message : 'Failed to download', details: statusCode === 500 ? err.message : undefined });
-  }
-});
-
-// Serve index.html for root if exists
-app.get('/', (req, res) => {
-  const idx = path.join(__dirname, 'frontend', 'index.html');
-  if (fs.existsSync(idx)) return res.sendFile(idx);
-  res.status(404).send('Not found');
-});
-
-// Start server
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+module.exports = { createApp };

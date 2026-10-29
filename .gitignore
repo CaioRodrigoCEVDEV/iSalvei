@@ -4,3 +4,14 @@ npm-debug.log
 *.tmp
 /tmp
 nohup.out
+
+# Deploy: backups, logs, relatórios, locks e PIDs locais
+.deploy/
+
+# Banco de dados e dados persistentes locais
+data/
+
+# Cookies e testes locais
+cookies*.txt
+*.cookies
+test/.tmp/
